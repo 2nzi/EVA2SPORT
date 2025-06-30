@@ -1,0 +1,157 @@
+{
+    "_comment": "Fichier de configuration exemple pour EVA2SPORT - Remplacez par vos vraies données",
+
+    "calibration": {
+        "status": "success",
+        "camera_parameters": {
+        "mode": "full",
+        "use_ransac": 5,
+        "rep_err": 2.5,
+        "cam_params": {
+            "pan_degrees": 45.0,
+            "tilt_degrees": 60.0,
+            "roll_degrees": 0.0,
+            "x_focal_length": 1500.0,
+            "y_focal_length": 1500.0,
+            "principal_point": [960, 540],
+            "position_meters": [-50.0, 30.0, -15.0],
+            "rotation_matrix": [
+            [0.7, 0.6, 0.0],
+            [-0.3, 0.3, 0.9],
+            [0.6, -0.7, 0.4]
+            ],
+            "radial_distortion": [0, 0, 0, 0, 0, 0],
+            "tangential_distortion": [0, 0],
+            "thin_prism_distortion": [0, 0, 0, 0]
+        },
+        "calib_plane": 0
+        },
+        "input_lines": {
+        "_note": "Lignes du terrain pour la calibration - coordonnées exemple",
+        "Side line top": [
+            {"x": 100, "y": 200},
+            {"x": 900, "y": 50}
+        ],
+        "Middle line": [
+            {"x": 500, "y": 100},
+            {"x": 1400, "y": 150}
+        ],
+        "Circle central": [
+            {"x": 950, "y": 300},
+            {"x": 1050, "y": 250},
+            {"x": 1150, "y": 300},
+            {"x": 1050, "y": 350},
+            {"x": 950, "y": 300}
+        ]
+        },
+        "message": "Calibration réussie"
+    },
+
+    "objects": [
+        {
+        "obj_id": 1,
+        "obj_type": "ball",
+        "team": null,
+        "_comment": "Le ballon n'appartient à aucune équipe"
+        },
+        {
+        "obj_id": 2,
+        "obj_type": "player",
+        "team": 1,
+        "_comment": "Joueur équipe 1 (domicile)"
+        },
+        {
+        "obj_id": 3,
+        "obj_type": "player", 
+        "team": 1
+        },
+        {
+        "obj_id": 4,
+        "obj_type": "player",
+        "team": 2,
+        "_comment": "Joueur équipe 2 (visiteur)"
+        },
+        {
+        "obj_id": 5,
+        "obj_type": "player",
+        "team": 2
+        }
+    ],
+
+    "initial_annotations": [
+        {
+        "frame": 0,
+        "_comment": "Annotations pour la première frame (frame 0)",
+        "annotations": [
+            {
+            "obj_id": 1,
+            "_comment": "Ballon - clic sur le centre",
+            "points": [
+                {
+                "x": 500,
+                "y": 300,
+                "label": 1
+                }
+            ]
+            },
+            {
+            "obj_id": 2,
+            "_comment": "Joueur 1 équipe 1 - clic sur le joueur",
+            "points": [
+                {
+                "x": 400,
+                "y": 350,
+                "label": 1
+                }
+            ]
+            },
+            {
+            "obj_id": 3,
+            "_comment": "Joueur 2 équipe 1",
+            "points": [
+                {
+                "x": 600,
+                "y": 250,
+                "label": 1
+                }
+            ]
+            },
+            {
+            "obj_id": 4,
+            "_comment": "Joueur 1 équipe 2",
+            "points": [
+                {
+                "x": 450,
+                "y": 400,
+                "label": 1
+                }
+            ]
+            },
+            {
+            "obj_id": 5,
+            "_comment": "Joueur 2 équipe 2", 
+            "points": [
+                {
+                "x": 550,
+                "y": 200,
+                "label": 1
+                }
+            ]
+            }
+        ]
+        }
+    ],
+
+    "_usage_instructions": {
+        "description": "Comment utiliser ce fichier de configuration",
+        "steps": [
+        "1. Copiez ce fichier et renommez-le: votre_video_config.json",
+        "2. Remplacez les données de calibration par les vôtres",
+        "3. Définissez vos objets (joueurs, ballon, etc.)",
+        "4. Annotez la première frame avec des clics sur chaque objet",
+        "5. Placez le fichier dans data/videos/ avec votre vidéo"
+        ],
+        "coordinate_system": "Coordonnées en pixels (x, y) dans l'image",
+        "label_meaning": "label: 1 = point positif pour l'objet"
+    }
+}
