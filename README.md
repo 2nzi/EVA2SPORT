@@ -5,9 +5,9 @@
 [![PyTorch](https://img.shields.io/badge/pytorch-2.5+-orange)](https://pytorch.org)
 
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
-<pre>
-<pre>
-<pre>
+<br>
+<br>
+<br>
 
 ## 🚀 Installation rapide
 
