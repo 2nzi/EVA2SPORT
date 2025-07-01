@@ -1,5 +1,9 @@
 # EVA2SPORT 🏀⚽
 
+[![Install Status](https://img.shields.io/badge/install-automatic-green)](./install.ps1)
+[![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/pytorch-2.5+-orange)](https://pytorch.org)
+
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
 
 ## 🚀 Installation rapide
@@ -35,65 +39,58 @@ uv run jupyter lab
 
 *⏱️ Temps d'installation : 5-15 minutes selon votre connexion*
 
-### Si vous avez des problèmes
-
 ```
 
 
-## 📊 Modes d'utilisation
+## 📊 Workflow Complet - 3 Étapes Simples
 
-### 🎯 Étape 1 : Préparer vos données
-Avant tout, configurez vos vidéos avec nos interfaces :
-- 📖 **[Guide complet de configuration](data/README.md)**
+### 🎯 **Étape 1 : Configuration des Données**
+Créez vos fichiers de configuration avec nos interfaces extérieures :
+- 🛠️ **[Guide complet de configuration](data/README.md)** - Processus détaillé avec interfaces
+- 📄 Génère : `votre_video_config.json`
 
-### 🚀 Étape 2 : Choisir votre mode
+### 🚀 **Étape 2 : Choisir votre Mode de Traitement**
 
-#### 💻 **Mode 1 : Notebook Local** (recommandé)
+#### 💻 **Mode Notebook Local** (recommandé)
 ```powershell
 # Après installation
 uv run jupyter lab
-# Puis ouvrir notebook/SAM_inference.ipynb
+# Puis suivre le guide notebook
 ```
+- 📖 **[Guide notebook complet](notebook/README.md)** - Instructions détaillées
+- ⚡ Performance optimale avec votre GPU
 
-#### ☁️ **Mode 2 : Google Colab** 
-- 📖 **[Guide Colab détaillé](notebook/README.md)**
-- Aucune installation requise
+#### ☁️ **Mode Google Colab** 
+- 📖 **[Guide Colab détaillé](notebook/README.md#mode-2--google-colab)**
+- ✅ Aucune installation requise
+- 🔄 GPU A100 + sauvegarde Drive
 
-#### ⚙️ **Mode 3 : Pipeline Python** (bientôt)
-- Scripts autonomes pour production
-- 🚧 En développement
+#### ⚙️ **Mode Pipeline Python** (bientôt)
+- 🚧 Scripts autonomes pour production
+- 🔄 En développement
+
+### 📊 **Étape 3 : Visualisation & Analyse**
+- 🎥 Génération vidéo annotée
+- 📈 Statistiques détaillées par équipe/joueur (TODO)
 
 ### Premier test
 ```powershell
 # Vérifier que tout fonctionne
 uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
 ```
-```
 
-## 5. **Ajouter section contact/support :**
+## 📚 Organisation de la Documentation
 
-```markdown
-## 💡 Aide
+Cette documentation est organisée en guides spécialisés pour vous accompagner étape par étape :
 
-- **Problème d'installation ?** Lancez `.\install.ps1 -Force`
-- **GPU non détecté ?** Vérifiez vos drivers NVIDIA
-- **Erreur PowerShell ?** Lancez en tant qu'administrateur
+| Guide | Objectif | Quand l'utiliser |
+|-------|----------|------------------|
+| **[📁 Configuration des Données](data/README.md)** | Processus complet avec les 2 interfaces externes | ✅ **Première étape obligatoire** |
+| **[📔 Guide des Notebooks](notebook/README.md)** | Utilisation locale + Colab | ✅ Après configuration des données |
+| **[🛠️ README Principal](README.md)** | Installation + vue d'ensemble | ✅ Point de départ |
 
-### Support
-- 🐛 **Bugs** : [Ouvrir une issue](https://github.com/2nzi/EVA2SPORT/issues)
-- 💬 **Questions** : [Discussions](https://github.com/2nzi/EVA2SPORT/discussions)
-- 📧 **Contact** : []
-```
-
-## 6. **Optionnel : Badge de statut :**
-
-En haut du README :
-```markdown
-# EVA2SPORT 🏀⚽
-
-[![Install Status](https://img.shields.io/badge/install-automatic-green)](./install.ps1)
-[![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
-[![PyTorch](https://img.shields.io/badge/pytorch-2.5+-orange)](https://pytorch.org)
-
-Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
+### 🔄 Navigation rapide
+- 🚀 **Nouveau sur EVA2SPORT ?** → Commencez ici puis [Configuration](data/README.md)
+- 🎬 **Vidéo prête ?** → [Guide Notebooks](notebook/README.md)  
+- 🐛 **Problème ?** → Sections troubleshooting de chaque guide
 ```
