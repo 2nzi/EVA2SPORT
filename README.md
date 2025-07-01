@@ -40,11 +40,28 @@ uv run jupyter lab
 ```
 
 
-## 📊 Utilisation
+## 📊 Modes d'utilisation
 
-Après installation, ouvrez un des notebooks :
-- `notebook/SAM_inference.ipynb` - Segmentation basique
-- `notebook/SAM_viz.ipynb` - Visualisation avancée
+### 🎯 Étape 1 : Préparer vos données
+Avant tout, configurez vos vidéos avec nos interfaces :
+- 📖 **[Guide complet de configuration](data/README.md)**
+
+### 🚀 Étape 2 : Choisir votre mode
+
+#### 💻 **Mode 1 : Notebook Local** (recommandé)
+```powershell
+# Après installation
+uv run jupyter lab
+# Puis ouvrir notebook/SAM_inference.ipynb
+```
+
+#### ☁️ **Mode 2 : Google Colab** 
+- 📖 **[Guide Colab détaillé](notebook/README.md)**
+- Aucune installation requise
+
+#### ⚙️ **Mode 3 : Pipeline Python** (bientôt)
+- Scripts autonomes pour production
+- 🚧 En développement
 
 ### Premier test
 ```powershell
