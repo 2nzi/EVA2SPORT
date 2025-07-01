@@ -9,7 +9,7 @@
 
 Découvrez EVA2SPORT en action avec cette démonstration de segmentation en temps réel :
 
-![EVA2SPORT Demo](docs/VIDEO_EXEMPLE_GITHUB.mp4)
+📥 **[Télécharger la vidéo de démonstration](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
 
 
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
@@ -127,6 +127,6 @@ Cette documentation est organisée en guides spécialisés pour vous accompagner
 
 Nouveau sur EVA2SPORT ? Regardez notre tutoriel complet :
 
-[![EVA2SPORT - Guide Complet](docs/assets/thumbnails/main-tutorial-thumbnail.png)](LIEN_VOTRE_VIDEO)
+📥 **[Télécharger la vidéo d'utilisation](docs/DEMO_TRACKING.mp4)**
 
-📚 **[Tous les tutoriels disponibles](docs/tutorials/README.md)**
+📚 **[Tous les tutoriels disponibles](docs/README.md)**
