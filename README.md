@@ -6,6 +6,9 @@
 
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
 
+
+
+
 ## 🚀 Installation rapide
 
 ### Prérequis
