@@ -125,13 +125,28 @@ try {
     Write-Warning "Erreur verification PyTorch"
 }
 
+# ACTIVATION DE L'ENVIRONNEMENT
+Write-Info "Activation de l'environnement virtuel..."
+try {
+    & .\.venv\Scripts\activate.ps1
+    Write-Success "Environnement virtuel active"
+} catch {
+    Write-Warning "Impossible d'activer automatiquement l'environnement"
+    Write-Info "Lancez manuellement: .\.venv\Scripts\activate.ps1"
+}
+
 # MESSAGES FINAUX
 Write-Host "`n=== INSTALLATION TERMINEE ===" -ForegroundColor Magenta
-Write-Success "EVA2SPORT pret pour test PyTorch!"
+Write-Success "EVA2SPORT pret et environnement active!"
 
 Write-Host "`nUSAGE:" -ForegroundColor Yellow
-Write-Host "  uv shell                 # Activer environnement"
+Write-Host "  python -c 'import torch; print(torch.cuda.is_available())'   # Tester PyTorch"
+Write-Host "  jupyter notebook                                              # Lancer Jupyter"
+Write-Host "  deactivate                                                    # Desactiver environnement"
+Write-Host ""
+Write-Host "  Ou avec uv (sans activation):" -ForegroundColor Cyan
 Write-Host "  uv run python -c 'import torch; print(torch.cuda.is_available())'"
+Write-Host "  uv run jupyter notebook"
 
 if ($useGPU) {
     Write-Host "`nGPU: Acceleration NVIDIA activee" -ForegroundColor Green
@@ -139,4 +154,4 @@ if ($useGPU) {
     Write-Host "`nCPU: Mode processeur" -ForegroundColor Yellow
 }
 
-Write-Success "Test PyTorch termine!" 
+Write-Success "Installation terminee et environnement active!" 
