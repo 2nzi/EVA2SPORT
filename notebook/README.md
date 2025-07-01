@@ -122,8 +122,8 @@ Uploadez tous les fichiers de résultats dans `/content/videos/outputs/`
 
 ```python
 # Ajustez selon vos besoins
-FRAME_INTERVAL = 1                      # Toutes les frames (plus précis, plus lent)
-FRAME_INTERVAL = 3                      # 1 frame sur 3 (balance qualité/vitesse)  
+FRAME_INTERVAL = 1                      # Toutes les frames 
+FRAME_INTERVAL = 3                      # 1 frame sur 3  
 ```
 
 ### ⚙️ Paramètres SAM2

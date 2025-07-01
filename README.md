@@ -1,4 +1,4 @@
-# EVA2SPORT 🏀⚽
+# EVA2SPORT⚽
 
 [![Install Status](https://img.shields.io/badge/install-automatic-green)](./install.ps1)
 [![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
@@ -39,7 +39,6 @@ uv run jupyter lab
 
 *⏱️ Temps d'installation : 5-15 minutes selon votre connexion*
 
-```
 
 
 ## 📊 Workflow Complet - 3 Étapes Simples
@@ -52,11 +51,13 @@ Créez vos fichiers de configuration avec nos interfaces extérieures :
 ### 🚀 **Étape 2 : Choisir votre Mode de Traitement**
 
 #### 💻 **Mode Notebook Local** (recommandé)
+
 ```powershell
 # Après installation
 uv run jupyter lab
-# Puis suivre le guide notebook
 ```
+
+# Puis suivre le guide notebook
 - 📖 **[Guide notebook complet](notebook/README.md)** - Instructions détaillées
 - ⚡ Performance optimale avec votre GPU
 
@@ -93,4 +94,3 @@ Cette documentation est organisée en guides spécialisés pour vous accompagner
 - 🚀 **Nouveau sur EVA2SPORT ?** → Commencez ici puis [Configuration](data/README.md)
 - 🎬 **Vidéo prête ?** → [Guide Notebooks](notebook/README.md)  
 - 🐛 **Problème ?** → Sections troubleshooting de chaque guide
-```

@@ -37,7 +37,7 @@ data/videos/
 Définir les paramètres intrinsèques et extrinsèques de la caméra pour permettre une analyse géométrique précise.
 
 ### 🎯 Utilisation
-1. **Lancez l'interface 1** : `[https://2nzi-footballfieldcalibaration.hf.space/]` 📝 *Remplacez par l'URL réelle*
+1. **Lancez l'interface 1** : `https://2nzi-footballfieldcalibaration.hf.space/` 
 2. **Chargez votre vidéo** : Sélectionnez votre fichier `.mp4`
 3. 
 a- mode automatique
@@ -49,7 +49,7 @@ b- mode manuel
 ```json
 {
   "calibration": {
-    ...
+    [TODO: EXEMPLE STRUCTURE]
   }
 }
 ```
@@ -60,7 +60,7 @@ b- mode manuel
 Définir les objets à tracker (joueurs, ballon, arbitres) et leurs positions initiales.
 
 ### 🛠️ Utilisation
-1. **Lancez l'interface 2** : `[https://2nzi-pointtrackapp.hf.space]` 📝 *Remplacez par l'URL réelle*
+1. **Lancez l'interface 2** : `[https://2nzi-pointtrackapp.hf.space]`
 2. **Chargez votre vidéo + config partiel** de l'étape 1
 3. **Définissez les objets** :
    - **Joueurs** : Équipes, couleurs maillots, numéros
@@ -75,10 +75,10 @@ Définir les objets à tracker (joueurs, ballon, arbitres) et leurs positions in
 ```json
 {
   "objects": [
-    ...
+    [TODO: EXEMPLE STRUCTURE]
   ],
   "initial_annotations": [
-    ...
+    [TODO: EXEMPLE STRUCTURE]
   ]
 }
 ```
