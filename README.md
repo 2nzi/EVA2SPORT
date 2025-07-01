@@ -4,6 +4,14 @@
 [![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/pytorch-2.5+-orange)](https://pytorch.org)
 
+
+## 🎬 Résultat en action
+
+Découvrez EVA2SPORT en action avec cette démonstration de segmentation en temps réel :
+
+<video src="docs/VIDEO_EXEMPLE_GITHUB.mp4" controls width="100%"></video>
+
+
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
 
 ## 🚀 Installation rapide
@@ -112,3 +120,13 @@ Cette documentation est organisée en guides spécialisés pour vous accompagner
 - 🚀 **Nouveau sur EVA2SPORT ?** → Commencez ici puis [Configuration](data/README.md)
 - 🎬 **Vidéo prête ?** → [Guide Notebooks](notebook/README.md)  
 - 🐛 **Problème ?** → Sections troubleshooting de chaque guide
+
+
+
+## 🎥 Tutoriels Vidéo
+
+Nouveau sur EVA2SPORT ? Regardez notre tutoriel complet :
+
+[![EVA2SPORT - Guide Complet](docs/assets/thumbnails/main-tutorial-thumbnail.png)](LIEN_VOTRE_VIDEO)
+
+📚 **[Tous les tutoriels disponibles](docs/tutorials/README.md)**

@@ -1,5 +1,11 @@
 # 📔 Guide des Notebooks - EVA2SPORT
 
+## 🎬 Tutoriel vidéo
+
+Suivez cette démonstration complète de l'utilisation des notebooks :
+
+https://github.com/user-attachments/assets/DEMO_TRACKING.mp4
+
 Ce guide explique comment utiliser EVA2SPORT via les notebooks Jupyter, en mode local ou Google Colab.
 
 ## 📋 Prérequis
