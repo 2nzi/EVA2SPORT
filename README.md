@@ -7,7 +7,6 @@
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
 <br>
 <br>
-<br>
 
 ## 🚀 Installation rapide
 
@@ -42,6 +41,8 @@ uv run jupyter lab
 
 *⏱️ Temps d'installation : 5-15 minutes selon votre connexion*
 
+<br>
+<br>
 
 
 ## 📊 Workflow Complet - 3 Étapes Simples
@@ -59,6 +60,9 @@ Créez vos fichiers de configuration avec nos interfaces extérieures :
 # Après installation
 uv run jupyter lab
 ```
+
+<br>
+<br>
 
 # Puis suivre le guide notebook
 - 📖 **[Guide notebook complet](notebook/README.md)** - Instructions détaillées
@@ -82,6 +86,9 @@ uv run jupyter lab
 # Vérifier que tout fonctionne
 uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
 ```
+
+<br>
+<br>
 
 ## 📚 Organisation de la Documentation
 
