@@ -63,9 +63,7 @@ uv run jupyter lab
 
 *⏱️ Temps d'installation : 5-15 minutes selon votre connexion*
 
-### 🚨 Si Git n'est pas installé
 
-**Message d'erreur typique :**
 
 ## 📊 Workflow Complet - 3 Étapes Simples
 
