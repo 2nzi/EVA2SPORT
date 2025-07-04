@@ -367,21 +367,25 @@ class PlayerMaskExtractor:
 
 
 def main():
-    # Chemins des fichiers
-    video_name = 'ARG_CRO_220001'
-    camera_path = f'./extracted_files/cameras/{video_name}.npz'
-    poses_path = f'./extracted_files/poses/{video_name}.npz'
-    video_path = f'./extracted_files/videos/{video_name}.mp4'
-    output_dir = './output'
-    smpl_model_path = './models/smpl'
-    
+
+
+    VIDEO_NAME = 'ARG_CRO_220001' 
+
+    INPUT_PATH = Path(r'\\10.35.51.152\Biomeca\Projets\25_AIT_Challenge')
+    CAMERAS_PATH = INPUT_PATH / f'extracted_files/cameras/{VIDEO_NAME}.npz'
+    POSES_PATH = INPUT_PATH / f'extracted_files/poses/{VIDEO_NAME}.npz'
+    VIDEOS_PATH = INPUT_PATH / f'extracted_files/videos/{VIDEO_NAME}.mp4'
+    SMPL_PATH = INPUT_PATH / 'models/smpl'
+    SAVE_PATH = INPUT_PATH / './output'
+
+
     # Créer l'extracteur
     extractor = PlayerMaskExtractor(
-        camera_path=camera_path,
-        poses_path=poses_path,
-        video_path=video_path,
-        output_dir=output_dir,
-        smpl_model_path=smpl_model_path,
+        camera_path=CAMERAS_PATH,
+        poses_path=POSES_PATH,
+        video_path=VIDEOS_PATH,
+        output_dir=SAVE_PATH,
+        smpl_model_path=SMPL_PATH,
         save_empty_masks=True
     )
     
