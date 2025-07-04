@@ -65,3 +65,7 @@ logs/
 *.jpg
 *.json
 *.mp4
+
+SAM_inference_NoNZeroFrameInput.ipynb
+
+/FIFA_env

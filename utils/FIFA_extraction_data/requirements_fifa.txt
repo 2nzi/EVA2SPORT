@@ -1,0 +1,6 @@
+# cd utils/FIFA_extreaction_data
+uv venv FIFA_env --python 3.8
+uv pip install smplx py7zr matplotlib numpy scipy
+pip install wheel setuptools pip
+pip install numpy scipy
+pip install git+https://github.com/mattloper/chumpy.git#
