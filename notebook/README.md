@@ -50,7 +50,7 @@ uv run jupyter lab
 ```python
 # 📋 CONFIGURATION PRINCIPALE - Modifiez ces valeurs
 VIDEO_NAME = "votre_video"              # ⚠️ Nom sans extension
-VIDEOS_DIR = "../data/videos"           # 📁 Chemin des vidéos
+VIDEOS_DIR = "../videos"           # 📁 Chemin des vidéos
 FRAME_INTERVAL = 3                      # 🎬 Intervalle extraction (1=toutes, 3=1 sur 3)
 ```
 
@@ -94,7 +94,7 @@ Parfait pour tester sans installation locale !
 ```python
 using_colab = True                      # ⚠️ CHANGEZ À True
 VIDEO_NAME = "votre_video"
-VIDEOS_DIR = "./videos"                 # 📁 Chemin Colab
+VIDEOS_DIR = "./data/videos"                 # 📁 Chemin Colab
 ```
 
 #### 3. **Upload de vos fichiers**
