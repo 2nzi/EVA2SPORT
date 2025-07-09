@@ -12,23 +12,40 @@ Usage avancé:
 
 from .pipeline import EVA2SportPipeline
 from .config import Config
+from typing import Optional
 
-def create_pipeline(video_name: str, working_dir: str = None) -> EVA2SportPipeline:
+def create_pipeline(video_name: str, working_dir: str = None,
+                   segment_offset_before_seconds: Optional[float] = None,
+                   segment_offset_after_seconds: Optional[float] = None,
+                   **kwargs) -> EVA2SportPipeline:
     """
     Crée une pipeline de tracking vidéo
     
     Args:
         video_name: Nom de la vidéo (sans extension)
         working_dir: Répertoire de travail (défaut: répertoire courant)
+        segment_offset_before_seconds: Offset avant en secondes (active le mode segment)
+        segment_offset_after_seconds: Offset après en secondes (active le mode segment)
+        **kwargs: Autres paramètres de configuration
     
     Returns:
         Pipeline configurée et prête à l'usage
     
     Example:
+        >>> # Mode complet
         >>> pipeline = eva2sport.create_pipeline("match_football")
-        >>> results = pipeline.run_full_pipeline()
+        >>> # Mode segmentation
+        >>> pipeline = eva2sport.create_pipeline("match_football", 
+        ...                                     segment_offset_before_seconds=2.0,
+        ...                                     segment_offset_after_seconds=3.0)
     """
-    return EVA2SportPipeline(video_name, working_dir)
+    return EVA2SportPipeline(
+        video_name, 
+        working_dir,
+        segment_offset_before_seconds=segment_offset_before_seconds,
+        segment_offset_after_seconds=segment_offset_after_seconds,
+        **kwargs
+    )
 
 def track_video(video_name: str, working_dir: str = None, 
                 force_extraction: bool = False) -> dict:

@@ -19,15 +19,27 @@ from .export.video_exporter import VideoExporter
 class EVA2SportPipeline:
     """Pipeline principale pour le tracking vidéo avec SAM2"""
     
-    def __init__(self, video_name: str, working_dir: Optional[str] = None):
+    def __init__(self, video_name: str, working_dir: Optional[str] = None,
+                 segment_offset_before_seconds: Optional[float] = None,
+                 segment_offset_after_seconds: Optional[float] = None,
+                 **kwargs):
         """
         Initialise la pipeline
         
         Args:
             video_name: Nom de la vidéo (sans extension)
             working_dir: Répertoire de travail (par défaut: répertoire courant)
+            segment_offset_before_seconds: Offset avant en secondes (active le mode segment)
+            segment_offset_after_seconds: Offset après en secondes (active le mode segment)
+            **kwargs: Autres paramètres de configuration
         """
-        self.config = Config(video_name, working_dir)
+        self.config = Config(
+            video_name, 
+            working_dir,
+            segment_offset_before_seconds=segment_offset_before_seconds,
+            segment_offset_after_seconds=segment_offset_after_seconds,
+            **kwargs
+        )
         
         # Modules de traitement
         self.video_processor = VideoProcessor(self.config)
@@ -57,7 +69,7 @@ class EVA2SportPipeline:
         """Extrait les frames de la vidéo"""
         print("🎬 Extraction des frames...")
         
-        if hasattr(self.config, 'SEGMENT_MODE') and self.config.SEGMENT_MODE:
+        if self.config.is_segment_mode:
             # Mode segmentation
             if not self.project_config:
                 raise ValueError("❌ Configuration projet requise pour le mode segmentation")
@@ -90,7 +102,7 @@ class EVA2SportPipeline:
             raise ValueError("❌ Configuration projet requise")
         
         segment_info = None
-        if hasattr(self.config, 'SEGMENT_MODE') and self.config.SEGMENT_MODE:
+        if self.config.is_segment_mode:
             segment_info = self.video_processor.get_segment_info(
                 self.project_config['initial_annotations'][0].get('frame', 0)
             )
@@ -289,3 +301,12 @@ class EVA2SportPipeline:
             return str(results['export_paths']['json'])
         else:
             raise RuntimeError(f"Pipeline failed: {results['error']}")
+
+    def display_config(self):
+        """Affiche la configuration actuelle"""
+        print(f"🚀 Démarrage de la pipeline complète EVA2SPORT")
+        print(f"   🎬 Vidéo: {self.config.VIDEO_NAME}")
+        if self.config.is_segment_mode:
+            print(f"   🎯 Mode: Segmentation")
+        else:
+            print(f"   🎯 Mode: Complet")

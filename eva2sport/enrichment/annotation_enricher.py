@@ -81,7 +81,7 @@ class AnnotationEnricher:
         anchor_processed_idx = self._get_anchor_processed_index(project_data, project_config)
         
         # ✅ CORRECTION: En mode segmentation, total_frames = extracted_frames_count
-        if hasattr(self.config, 'SEGMENT_MODE') and self.config.SEGMENT_MODE:
+        if self.config.is_segment_mode:
             total_frames = self.config.extracted_frames_count  # 34 dans votre cas
         else:
             total_frames = len([f for f in project_data['metadata']['frame_mapping'] if f is not None])
@@ -241,7 +241,7 @@ class AnnotationEnricher:
                                   project_config: Dict[str, Any]) -> int:
         """Calcule l'index de la frame d'ancrage dans les frames traitées"""
         
-        if hasattr(self.config, 'SEGMENT_MODE') and self.config.SEGMENT_MODE:
+        if self.config.is_segment_mode:
             # Mode segmentation : utiliser la logique exacte du notebook
             reference_frame_original = project_config['initial_annotations'][0].get('frame', 0)
             reference_frame_processed = reference_frame_original // self.config.FRAME_INTERVAL

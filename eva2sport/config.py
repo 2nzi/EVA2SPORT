@@ -11,7 +11,10 @@ import torch
 class Config:
     """Configuration centralisée pour EVA2SPORT"""
     
-    def __init__(self, video_name: str, working_dir: Optional[str] = None):
+    def __init__(self, video_name: str, working_dir: Optional[str] = None,
+                 segment_offset_before_seconds: Optional[float] = None,
+                 segment_offset_after_seconds: Optional[float] = None,
+                 **kwargs):
         """
         Configuration simple et prévisible
         
@@ -24,14 +27,13 @@ class Config:
         self.working_dir = Path(working_dir) if working_dir else Path.cwd()
         
         # Configuration par défaut
-        self.FRAME_INTERVAL = 3
-        self.EXTRACT_FRAMES = True
-        self.FORCE_EXTRACTION = False
+        self.FRAME_INTERVAL = kwargs.get('frame_interval', 3)
+        self.EXTRACT_FRAMES = kwargs.get('extract_frames', True)
+        self.FORCE_EXTRACTION = kwargs.get('force_extraction', False)
         
-        # Segmentation
-        self.SEGMENT_MODE = True
-        self.SEGMENT_OFFSET_BEFORE_SECONDS = 2.0
-        self.SEGMENT_OFFSET_AFTER_SECONDS = 2.0
+        # Segmentation - juste stocker les offsets
+        self.SEGMENT_OFFSET_BEFORE_SECONDS = segment_offset_before_seconds
+        self.SEGMENT_OFFSET_AFTER_SECONDS = segment_offset_after_seconds
         
         # SAM2
         self.SAM2_MODEL = "sam2.1_hiera_l"
@@ -101,6 +103,12 @@ class Config:
         print("✅ Tous les prérequis sont présents")
         return True
     
+    @property
+    def is_segment_mode(self) -> bool:
+        """Détermine automatiquement si on est en mode segmentation"""
+        return (self.SEGMENT_OFFSET_BEFORE_SECONDS is not None or 
+                self.SEGMENT_OFFSET_AFTER_SECONDS is not None)
+    
     def display_config(self):
         """Affichage simple de la configuration"""
         print(f"📋 Configuration EVA2SPORT:")
@@ -108,13 +116,13 @@ class Config:
         print(f"   📁 Répertoire: {self.working_dir}")
         print(f"   🖥️ Device: {self.device}")
         print(f"   ⏯️ Intervalle: {self.FRAME_INTERVAL}")
-        print(f"   🎯 Segmentation: {self.SEGMENT_MODE}")
         
-        # État des fichiers
-        print(f"\n📄 Fichiers:")
-        print(f"   🎬 Vidéo: {'✅' if self.video_path.exists() else '❌'} {self.video_path}")
-        print(f"   📄 Config: {'✅' if self.config_path.exists() else '❌'} {self.config_path}")
-        print(f"   💾 Checkpoint: {'✅' if self.checkpoint_path.exists() else '❌'} {self.checkpoint_path}")
+        if self.is_segment_mode:
+            print(f"   🎯 Mode: Segmentation")
+            print(f"   📉 Offset avant: {self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0}s")
+            print(f"   📈 Offset après: {self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0}s")
+        else:
+            print(f"   🎯 Mode: Vidéo complète")
     
     # Méthodes utilitaires (FPS, etc.) - comme avant mais sans logique Colab
     def get_video_fps(self) -> float:
@@ -133,7 +141,11 @@ class Config:
         return int(round(seconds * fps))
     
     def get_segment_offsets_frames(self):
+        """Calcule les offsets en frames"""
+        if not self.is_segment_mode:
+            raise ValueError("❌ Les offsets ne sont disponibles qu'en mode segmentation")
+        
         fps = self.get_video_fps()
-        offset_before = self.seconds_to_frames(self.SEGMENT_OFFSET_BEFORE_SECONDS, fps)
-        offset_after = self.seconds_to_frames(self.SEGMENT_OFFSET_AFTER_SECONDS, fps)
+        offset_before = self.seconds_to_frames(self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0, fps)
+        offset_after = self.seconds_to_frames(self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0, fps)
         return offset_before, offset_after

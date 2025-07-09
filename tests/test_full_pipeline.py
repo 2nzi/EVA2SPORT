@@ -24,7 +24,11 @@ def test_full_pipeline():
     try:
         # 1. Créer la pipeline
         print("1. 🏗️ Création de la pipeline...")
-        pipeline = EVA2SportPipeline(video_name)
+        pipeline = EVA2SportPipeline(
+            video_name,
+            segment_offset_before_seconds=1.0,
+            segment_offset_after_seconds=2.0
+        )
         print(f"   ✅ Pipeline créée pour: {video_name}")
         
         # 2. Exécution complète
@@ -32,7 +36,7 @@ def test_full_pipeline():
         print("   ⚡ Cela peut prendre plusieurs minutes...")
         
         results = pipeline.run_full_pipeline(
-            force_extraction=False     # Réutilise les frames existantes
+            force_extraction=True     # Réutilise les frames existantes
         )
         
         # 3. Affichage des résultats
@@ -68,7 +72,7 @@ def test_full_pipeline():
                 fps=5,                      # FPS réduit pour test rapide
                 show_minimap=True,          # Inclure minimap
                 cleanup_frames=True,        # Nettoyer après
-                force_regenerate=False      # Utiliser frames existantes
+                force_regenerate=True      # Utiliser frames existantes
             )
             
             print(f"   ✅ Vidéo générée: {video_path}")
