@@ -45,7 +45,7 @@ class VideoExporter:
             'half_field': "full",
             'invert_x': False,
             'invert_y': True,
-            'transparency': 0.65,
+            'transparency': 0.4,
             'size': "35%",
             'position': 'lower center'
         }
@@ -76,7 +76,7 @@ class VideoExporter:
             'half_field': "full",
             'invert_x': False,
             'invert_y': True,
-            'transparency': 0.65,
+            'transparency': 0.4,
             'size': "35%",
             'position': 'lower center'
         }

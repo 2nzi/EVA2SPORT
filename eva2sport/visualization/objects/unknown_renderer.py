@@ -40,9 +40,7 @@ class UnknownRenderer(BaseRenderer):
             x, y,
             color=color,
             s=point_size,
-            zorder=5,
-            edgecolors='white',
-            linewidth=1
+            zorder=5
         )
         
         # Dessiner l'ID si nécessaire

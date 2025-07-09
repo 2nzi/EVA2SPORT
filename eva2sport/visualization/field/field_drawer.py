@@ -33,8 +33,7 @@ class FieldDrawer:
         # Créer le terrain
         field = FootballField2D(
             line_color=self.config.minimap_config.line_color,
-            background_color=self.config.minimap_config.background_color,
-            line_width=self.config.minimap_config.line_width
+            background_color=self.config.minimap_config.background_color
         )
         
         # Dessiner le terrain

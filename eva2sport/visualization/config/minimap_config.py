@@ -17,7 +17,7 @@ class MinimapConfig:
     invert_y: bool = True
     
     # Apparence
-    transparency: float = 0.65
+    transparency: float = 0.4
     size: str = "35%"
     position: Literal[
         'upper left', 'upper center', 'upper right',
@@ -28,12 +28,11 @@ class MinimapConfig:
     # Style du terrain
     line_color: str = 'white'
     background_color: str = 'black'
-    line_width: float = 1.5
     
     # Objets sur le terrain
-    point_size: int = 150
+    point_size: int = 125
     show_object_ids: bool = True
-    id_font_size: int = 9
+    id_font_size: int = 7
     
     def __post_init__(self):
         """Validation des paramètres après initialisation"""
@@ -74,10 +73,7 @@ class MinimapConfig:
         if self.position not in valid_positions:
             raise ValueError(f"position invalide: {self.position}")
         
-        # Validation line_width
-        if self.line_width <= 0:
-            raise ValueError(f"line_width doit être positif, reçu: {self.line_width}")
-        
+
         # Validation point_size
         if self.point_size <= 0:
             raise ValueError(f"point_size doit être positif, reçu: {self.point_size}")
@@ -111,7 +107,6 @@ class MinimapConfig:
             'position': self.position,
             'line_color': self.line_color,
             'background_color': self.background_color,
-            'line_width': self.line_width,
             'point_size': self.point_size,
             'show_object_ids': self.show_object_ids,
             'id_font_size': self.id_font_size
