@@ -13,7 +13,7 @@ from .tracking.video_processor import VideoProcessor
 from .tracking.sam2_tracker import SAM2Tracker
 from .enrichment.annotation_enricher import AnnotationEnricher
 from .export.project_exporter import ProjectExporter
-from .export.video_exporter import VideoExporter
+from .visualization import VideoExporter, VisualizationConfig, MinimapConfig
 
 
 class EVA2SportPipeline:
@@ -184,7 +184,10 @@ class EVA2SportPipeline:
     
     def export_video(self, fps: int = 30, show_minimap: bool = True, 
                     cleanup_frames: bool = True, force_regenerate: bool = False,
-                    minimap_config: Optional[Dict] = None) -> str:
+                    minimap_config: Optional[Dict] = None,
+                    preset: Optional[str] = None,
+                    figsize: Tuple[int, int] = (15, 8),
+                    dpi: int = 100) -> str:
         """
         Exporte la vidéo avec annotations et visualisations
         
@@ -194,6 +197,9 @@ class EVA2SportPipeline:
             cleanup_frames: Supprimer les frames temporaires après export
             force_regenerate: Forcer la régénération des frames
             minimap_config: Configuration de la minimap (rotation, half_field, etc.)
+            preset: Preset de configuration ('default', 'high_quality', 'fast_preview', 'tactical_analysis')
+            figsize: Taille de la figure
+            dpi: Résolution des images
         
         Returns:
             str: Chemin de la vidéo générée
@@ -201,8 +207,31 @@ class EVA2SportPipeline:
         
         print("🎬 Export vidéo avec annotations...")
         
-        # Créer l'exporteur vidéo
-        video_exporter = VideoExporter(self.config)
+        # Créer l'exporteur vidéo avec preset ou configuration par défaut
+        if preset:
+            print(f"🎯 Utilisation du preset: {preset}")
+            video_exporter = VideoExporter.create_with_preset(self.config, preset)
+            
+            # Appliquer les paramètres supplémentaires
+            video_exporter.configure_visualization(
+                fps=fps,
+                show_minimap=show_minimap,
+                cleanup_frames=cleanup_frames,
+                force_regenerate=force_regenerate,
+                figsize=figsize,
+                dpi=dpi
+            )
+        else:
+            # Configuration manuelle
+            viz_config = VisualizationConfig(
+                fps=fps,
+                show_minimap=show_minimap,
+                cleanup_frames=cleanup_frames,
+                force_regenerate=force_regenerate,
+                figsize=figsize,
+                dpi=dpi
+            )
+            video_exporter = VideoExporter(self.config, viz_config)
         
         # Configurer la minimap si demandé
         if minimap_config:
@@ -210,19 +239,20 @@ class EVA2SportPipeline:
             print(f"🎯 Minimap configurée: {minimap_config}")
         
         # Définir le chemin de sortie
-        output_path = str(self.config.output_dir / f"{self.config.VIDEO_NAME}_annotated.mp4")
+        preset_suffix = f"_{preset}" if preset else ""
+        output_path = str(self.config.output_dir / f"{self.config.VIDEO_NAME}_annotated{preset_suffix}.mp4")
         
         # Exporter la vidéo
-        success = video_exporter.export_video(
-            output_video_path=output_path,
-            fps=fps,
-            show_minimap=show_minimap,
-            cleanup_frames=cleanup_frames,
-            force_regenerate=force_regenerate
-        )
+        success = video_exporter.export_video(output_path)
         
         if success:
             print(f"✅ Vidéo exportée: {output_path}")
+            
+            # Afficher les statistiques
+            stats = video_exporter.get_export_stats()
+            if stats:
+                print(f"📊 Statistiques: {stats['total_frames']} frames, {stats['total_objects']} annotations")
+            
             return output_path
         else:
             raise Exception("❌ Échec de l'export vidéo")
