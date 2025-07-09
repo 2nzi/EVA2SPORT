@@ -183,9 +183,17 @@ class EVA2SportPipeline:
         return results_paths
     
     def export_video(self, fps: int = 30, show_minimap: bool = True, 
-                    cleanup_frames: bool = True, force_regenerate: bool = False) -> str:
+                    cleanup_frames: bool = True, force_regenerate: bool = False,
+                    minimap_config: Optional[Dict] = None) -> str:
         """
         Exporte la vidéo avec annotations et visualisations
+        
+        Args:
+            fps: Frames par seconde de la vidéo
+            show_minimap: Afficher la minimap
+            cleanup_frames: Supprimer les frames temporaires après export
+            force_regenerate: Forcer la régénération des frames
+            minimap_config: Configuration de la minimap (rotation, half_field, etc.)
         
         Returns:
             str: Chemin de la vidéo générée
@@ -195,6 +203,11 @@ class EVA2SportPipeline:
         
         # Créer l'exporteur vidéo
         video_exporter = VideoExporter(self.config)
+        
+        # Configurer la minimap si demandé
+        if minimap_config:
+            video_exporter.configure_minimap(**minimap_config)
+            print(f"🎯 Minimap configurée: {minimap_config}")
         
         # Définir le chemin de sortie
         output_path = str(self.config.output_dir / f"{self.config.VIDEO_NAME}_annotated.mp4")
