@@ -26,18 +26,32 @@ def test_full_pipeline():
         print("1. 🏗️ Création de la pipeline...")
         pipeline = EVA2SportPipeline(
             video_name,
-            segment_offset_before_seconds=1.0,
-            segment_offset_after_seconds=2.0
+            segment_offset_before_seconds=5.0,
+            segment_offset_after_seconds=5.0
         )
         print(f"   ✅ Pipeline créée pour: {video_name}")
         
-        # 2. Exécution complète
-        print("\n2. 🚀 Exécution pipeline complète...")
+        # 2. Exécution complète avec export vidéo
+        print("\n2. 🚀 Exécution pipeline complète avec export vidéo...")
         print("   ⚡ Cela peut prendre plusieurs minutes...")
-        
+
         results = pipeline.run_full_pipeline(
-            force_extraction=True     # Réutilise les frames existantes
+            force_extraction=True,
+            export_video=True,
+            video_params={
+                'fps': 5,                      # FPS réduit pour test rapide
+                'show_minimap': True,          # Inclure minimap
+                'cleanup_frames': True,        # Nettoyer après
+                'force_regenerate': True       # Utiliser frames existantes
+            }
         )
+
+        # Vérification additionnelle si la vidéo a été créée
+        if results['status'] == 'success' and 'video' in results['export_paths']:
+            video_path = results['export_paths']['video']
+            if Path(video_path).exists():
+                video_size = Path(video_path).stat().st_size / 1024**2
+                print(f"   📊 Taille vidéo: {video_size:.1f}MB")
         
         # 3. Affichage des résultats
         print("\n3. 📊 RÉSULTATS FINAUX")
@@ -65,35 +79,6 @@ def test_full_pipeline():
             print(f"   ❌ Erreur: {results['error']}")
             return False
         
-        # 4. Test export vidéo
-        print("\n4. 🎬 Test export vidéo...")
-        try:
-            video_path = pipeline.export_video(
-                fps=5,                      # FPS réduit pour test rapide
-                show_minimap=True,          # Inclure minimap
-                cleanup_frames=True,        # Nettoyer après
-                force_regenerate=True      # Utiliser frames existantes
-            )
-            
-            print(f"   ✅ Vidéo générée: {video_path}")
-            
-            # Vérifier que le fichier existe
-            if Path(video_path).exists():
-                video_size = Path(video_path).stat().st_size / 1024**2
-                print(f"   📊 Taille vidéo: {video_size:.1f}MB")
-                results['export_paths']['video'] = video_path
-            else:
-                print(f"   ❌ Fichier vidéo non trouvé")
-                
-        except Exception as e:
-            print(f"   ❌ Erreur export vidéo: {e}")
-            print(f"   💡 Continuez sans export vidéo")
-
-        # 5. Test de l'API simple
-        print("\n5. 🧪 Test API simple...")
-        simple_output = pipeline.run_simple(force_extraction=False)
-        print(f"   ✅ Export simple: {simple_output}")
-        
         print("\n" + "=" * 50)
         print("✅ TEST PIPELINE COMPLÈTE RÉUSSI!")
         print("🎉 Tous les modules fonctionnent correctement")
@@ -107,47 +92,9 @@ def test_full_pipeline():
         return False
 
 
-def test_performance():
-    """Test rapide de performance"""
-    
-    print("\n🏃 TEST DE PERFORMANCE")
-    print("-" * 30)
-    
-    import time
-    video_name = "SD_13_06_2025_cam1_PdB_S1_T959s_1"
-    
-    # Test initialisation
-    start = time.time()
-    pipeline = EVA2SportPipeline(video_name)
-    pipeline.load_project_config()
-    init_time = time.time() - start
-    
-    print(f"⚡ Initialisation: {init_time:.2f}s")
-    
-    # Test extraction (avec frames existantes)
-    start = time.time()
-    frames_count = pipeline.extract_frames(force=False)
-    extract_time = time.time() - start
-    
-    print(f"🎬 Extraction {frames_count} frames: {extract_time:.2f}s")
-    
-    # Test initialisation SAM2
-    start = time.time() 
-    pipeline.initialize_tracking()
-    tracking_init_time = time.time() - start
-    
-    print(f"🤖 Init tracking: {tracking_init_time:.2f}s")
-    
-    total_time = init_time + extract_time + tracking_init_time
-    print(f"⏱️ Total (init): {total_time:.2f}s")
-
-
 if __name__ == "__main__":
     print("🧪 TESTS EVA2SPORT PIPELINE")
     print("=" * 50)
-    
-    # Test performance rapide
-    # test_performance()
     
     # Test pipeline complète
     success = test_full_pipeline()

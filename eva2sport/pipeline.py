@@ -216,13 +216,17 @@ class EVA2SportPipeline:
     
     def run_full_pipeline(self, 
                          force_extraction: bool = False,
-                         include_visualization: bool = True) -> Dict[str, Any]:
+                         include_visualization: bool = True,
+                         export_video: bool = False,
+                         video_params: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Exécute la pipeline complète
         
         Args:
             force_extraction: Force la ré-extraction des frames
             include_visualization: Inclut les visualisations dans l'export
+            export_video: Inclut l'export vidéo
+            video_params: Paramètres pour l'export vidéo
             
         Returns:
             Dictionnaire avec les résultats et chemins de fichiers
@@ -249,6 +253,15 @@ class EVA2SportPipeline:
             
             # Étape 6: Export
             export_paths = self.export_results(include_visualization)
+            
+            # Étape 7: Export vidéo optionnel
+            if export_video:
+                try:
+                    video_params = video_params or {}
+                    video_path = self.export_video(**video_params)
+                    export_paths['video'] = video_path
+                except Exception as e:
+                    print(f"⚠️ Export vidéo échoué (pipeline continue): {e}")
             
             # Résultats finaux
             final_results = {
