@@ -143,9 +143,9 @@ class VideoProcessor:
         print(f"   🎬 Segment traité: indices {processed_start_idx} à {processed_end_idx}")
         
         return start_frame, end_frame, processed_start_idx, processed_end_idx
-    
+        
     def _extract_segment_frames(self, start_frame: int, end_frame: int, 
-                              force_extraction: bool) -> int:
+                            force_extraction: bool) -> int:
         """Extrait les frames du segment avec nommage séquentiel"""
         
         print(f"🎬 EXTRACTION DU SEGMENT:")
@@ -160,22 +160,26 @@ class VideoProcessor:
             expected_frames.append((frame_idx, sequential_idx))
             sequential_idx += 1
         
-        # Vérifier si extraction déjà faite
-        existing_frames = []
-        for frame_idx, seq_idx in expected_frames:
-            filename = self.config.frames_dir / f"{seq_idx:05d}.jpg"
-            if filename.exists():
-                existing_frames.append(filename)
+        # NOUVEAU : Nettoyer complètement le dossier en mode segment
+        all_existing_frames = list(self.config.frames_dir.glob("*.jpg"))
         
-        if len(existing_frames) == len(expected_frames) and not force_extraction:
-            print(f"📂 {len(existing_frames)} frames du segment déjà extraites - SKIP")
-            return len(existing_frames)
-        elif existing_frames and force_extraction:
-            print(f"🔄 Suppression et ré-extraction...")
-            for frame_file in existing_frames:
+        if not force_extraction:
+            # Vérifier si exactement les bonnes frames existent
+            expected_files = [self.config.frames_dir / f"{seq_idx:05d}.jpg" 
+                            for _, seq_idx in expected_frames]
+            
+            if (len(all_existing_frames) == len(expected_files) and 
+                all(f.exists() for f in expected_files)):
+                print(f"📂 {len(expected_files)} frames du segment déjà extraites - SKIP")
+                return len(expected_files)
+        
+        # Nettoyage complet du dossier
+        if all_existing_frames:
+            print(f"🧹 Nettoyage du dossier: suppression de {len(all_existing_frames)} frames")
+            for frame_file in all_existing_frames:
                 frame_file.unlink()
         
-        # Extraction
+        # Extraction des frames du segment
         cap = cv2.VideoCapture(str(self.config.video_path))
         if not cap.isOpened():
             raise ValueError(f"❌ Impossible d'ouvrir la vidéo: {self.config.video_path}")
