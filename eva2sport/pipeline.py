@@ -22,6 +22,7 @@ class EVA2SportPipeline:
     def __init__(self, video_name: str, working_dir: Optional[str] = None,
                  segment_offset_before_seconds: Optional[float] = None,
                  segment_offset_after_seconds: Optional[float] = None,
+                 event_timestamp_seconds: Optional[float] = None,
                  **kwargs):
         """
         Initialise la pipeline
@@ -31,6 +32,7 @@ class EVA2SportPipeline:
             working_dir: Répertoire de travail (par défaut: répertoire courant)
             segment_offset_before_seconds: Offset avant en secondes (active le mode segment)
             segment_offset_after_seconds: Offset après en secondes (active le mode segment)
+            event_timestamp_seconds: Timestamp de l'event en secondes (active le mode event)
             **kwargs: Autres paramètres de configuration
         """
         self.config = Config(
@@ -38,6 +40,7 @@ class EVA2SportPipeline:
             working_dir,
             segment_offset_before_seconds=segment_offset_before_seconds,
             segment_offset_after_seconds=segment_offset_after_seconds,
+            event_timestamp_seconds=event_timestamp_seconds,
             **kwargs
         )
         
@@ -69,10 +72,10 @@ class EVA2SportPipeline:
         """Extrait les frames de la vidéo"""
         print("🎬 Extraction des frames...")
         
-        if self.config.is_segment_mode:
-            # Mode segmentation
+        if self.config.is_segment_mode or self.config.is_event_mode:
+            # Mode segmentation ou event
             if not self.project_config:
-                raise ValueError("❌ Configuration projet requise pour le mode segmentation")
+                raise ValueError("❌ Configuration projet. requise pour le mode segmentation/event")
             
             reference_frame = self.project_config['initial_annotations'][0].get('frame', 0)
             frames_count = self.video_processor.extract_segment_frames(
@@ -276,7 +279,12 @@ class EVA2SportPipeline:
         """
         print("🚀 Démarrage de la pipeline complète EVA2SPORT")
         print(f"   🎬 Vidéo: {self.config.VIDEO_NAME}")
-        print(f"   🎯 Mode: {'Segmentation' if getattr(self.config, 'SEGMENT_MODE', False) else 'Complet'}")
+        if self.config.is_event_mode:
+            print(f"   🎯 Mode: Event (timestamp: {self.config.event_timestamp_seconds}s)")
+        elif self.config.is_segment_mode:
+            print(f"   🎯 Mode: Segmentation")
+        else:
+            print(f"   🎯 Mode: Complet")
         
         try:
             # Étape 1: Charger la configuration
@@ -362,7 +370,9 @@ class EVA2SportPipeline:
         """Affiche la configuration actuelle"""
         print(f"🚀 Démarrage de la pipeline complète EVA2SPORT")
         print(f"   🎬 Vidéo: {self.config.VIDEO_NAME}")
-        if self.config.is_segment_mode:
+        if self.config.is_event_mode:
+            print(f"   🎯 Mode: Event (timestamp: {self.config.event_timestamp_seconds}s)")
+        elif self.config.is_segment_mode:
             print(f"   🎯 Mode: Segmentation")
         else:
             print(f"   🎯 Mode: Complet")

@@ -4,8 +4,28 @@ Environnement local/production uniquement
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
+from dataclasses import dataclass
 import torch
+
+
+@dataclass
+class EventInterval:
+    """Représente un intervalle d'event avec ses bornes"""
+    event_frame: int
+    start_frame: int
+    end_frame: int
+    annotation_frame: Optional[int] = None
+    
+    def contains_annotation(self, annotation_frame: int) -> bool:
+        """Vérifie si l'annotation est dans l'intervalle"""
+        return self.start_frame <= annotation_frame <= self.end_frame
+    
+    def set_annotation(self, annotation_frame: int):
+        """Définit la frame d'annotation après vérification"""
+        if not self.contains_annotation(annotation_frame):
+            raise ValueError(f"Frame d'annotation {annotation_frame} en dehors de l'intervalle [{self.start_frame}, {self.end_frame}]")
+        self.annotation_frame = annotation_frame
 
 
 class Config:
@@ -14,6 +34,7 @@ class Config:
     def __init__(self, video_name: str, working_dir: Optional[str] = None,
                  segment_offset_before_seconds: Optional[float] = None,
                  segment_offset_after_seconds: Optional[float] = None,
+                 event_timestamp_seconds: Optional[float] = None,
                  **kwargs):
         """
         Configuration simple et prévisible
@@ -21,6 +42,9 @@ class Config:
         Args:
             video_name: Nom de la vidéo (sans extension)
             working_dir: Répertoire de travail (défaut: répertoire courant)
+            segment_offset_before_seconds: Offset avant en secondes (mode segment)
+            segment_offset_after_seconds: Offset après en secondes (mode segment)
+            event_timestamp_seconds: Timestamp de l'event en secondes (mode event)
         """
         # Base
         self.VIDEO_NAME = video_name
@@ -35,6 +59,10 @@ class Config:
         self.SEGMENT_OFFSET_BEFORE_SECONDS = segment_offset_before_seconds
         self.SEGMENT_OFFSET_AFTER_SECONDS = segment_offset_after_seconds
         
+        # Event mode
+        self.event_timestamp_seconds = event_timestamp_seconds
+        self.event_frame = None
+        
         # SAM2
         self.SAM2_MODEL = "sam2.1_hiera_l"
         self.SAM2_CHECKPOINT = "sam2.1_hiera_large.pt"
@@ -43,6 +71,10 @@ class Config:
         self._setup_paths()
         self._setup_device()
         self.setup_directories()
+        
+        # Initialiser event_frame après setup (besoin du FPS)
+        if self.event_timestamp_seconds is not None:
+            self.event_frame = self.seconds_to_frames(self.event_timestamp_seconds)
     
     def _setup_paths(self):
         """Chemins simples et prévisibles"""
@@ -109,6 +141,59 @@ class Config:
         return (self.SEGMENT_OFFSET_BEFORE_SECONDS is not None or 
                 self.SEGMENT_OFFSET_AFTER_SECONDS is not None)
     
+    @property
+    def is_event_mode(self) -> bool:
+        """Détermine si on est en mode event"""
+        return self.event_timestamp_seconds is not None
+    
+    def create_event_interval(self, annotation_frame: int) -> EventInterval:
+        """Crée l'intervalle d'event et vérifie que l'annotation est dedans"""
+        if not self.is_event_mode:
+            raise ValueError("Non configuré pour le mode event")
+        
+        fps = self.get_video_fps()
+        
+        # Calculer les bornes de l'intervalle event
+        offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+        offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
+        
+        start_frame = max(0, self.event_frame - offset_before_frames)
+        end_frame = self.event_frame + offset_after_frames
+        
+        # Créer l'intervalle
+        interval = EventInterval(
+            event_frame=self.event_frame,
+            start_frame=start_frame,
+            end_frame=end_frame
+        )
+        
+        # Vérifier et définir l'annotation
+        interval.set_annotation(annotation_frame)
+        
+        # Logging
+        print(f"🎯 Mode event - Intervalle créé:")
+        print(f"   📍 Event timestamp: {self.event_timestamp_seconds}s (frame {self.event_frame})")
+        print(f"   📍 Frame annotation: {annotation_frame}")
+        print(f"   📊 Intervalle: frames {start_frame} à {end_frame}")
+        print(f"   📉 Offset avant: {self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0}s ({offset_before_frames} frames)")
+        print(f"   📈 Offset après: {self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0}s ({offset_after_frames} frames)")
+        
+        return interval
+    
+    def create_segment_bounds(self, reference_frame: int) -> Tuple[int, int]:
+        """Crée les bornes du segment pour une frame de référence (mode segment classique)"""
+        if not self.is_segment_mode:
+            raise ValueError("Non configuré pour le mode segment")
+            
+        fps = self.get_video_fps()
+        offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+        offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
+        
+        start_frame = max(0, reference_frame - offset_before_frames)
+        end_frame = reference_frame + offset_after_frames
+        
+        return start_frame, end_frame
+    
     def display_config(self):
         """Affichage simple de la configuration"""
         print(f"📋 Configuration EVA2SPORT:")
@@ -117,7 +202,13 @@ class Config:
         print(f"   🖥️ Device: {self.device}")
         print(f"   ⏯️ Intervalle: {self.FRAME_INTERVAL}")
         
-        if self.is_segment_mode:
+        if self.is_event_mode:
+            print(f"   🎯 Mode: Event")
+            print(f"   ⏰ Event timestamp: {self.event_timestamp_seconds}s")
+            print(f"   📍 Event frame: {self.event_frame}")
+            print(f"   📉 Offset avant: {self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0}s")
+            print(f"   📈 Offset après: {self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0}s")
+        elif self.is_segment_mode:
             print(f"   🎯 Mode: Segmentation")
             print(f"   📉 Offset avant: {self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0}s")
             print(f"   📈 Offset après: {self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0}s")

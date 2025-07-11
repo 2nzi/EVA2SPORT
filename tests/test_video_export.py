@@ -179,7 +179,7 @@ def test_export_avec_preset():
     print("\n🎯 Test 5: Export avec preset default")
     print("=" * 50)
     
-    VIDEO_NAME = "SD_13_06_2025_cam1_PdB_S1_T959s_1"
+    VIDEO_NAME = "SD_13_06_2025_cam1"
     pipeline = EVA2SportPipeline(VIDEO_NAME)
     config = pipeline.config
     

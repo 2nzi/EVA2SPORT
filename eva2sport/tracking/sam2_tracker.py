@@ -38,12 +38,16 @@ class SAM2Tracker:
         if not self.config.checkpoint_path.exists():
             raise FileNotFoundError(f"❌ Checkpoint SAM2 non trouvé: {self.config.checkpoint_path}")
         
-        # Construction du predictor
+        # Construction du predictor avec gestion des types
         self.predictor = build_sam2_video_predictor(
             config_file=self.config.model_config_path,
             ckpt_path=str(self.config.checkpoint_path),
             device=self.config.device
         )
+        
+        # Forcer le type float32 pour éviter les problèmes de dtype
+        if hasattr(self.predictor, 'model'):
+            self.predictor.model = self.predictor.model.float()
         
         if verbose:
             print("✅ Predictor SAM2 initialisé")

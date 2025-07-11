@@ -80,9 +80,9 @@ class AnnotationEnricher:
         # ✅ CORRECTION: Utiliser la méthode corrigée
         anchor_processed_idx = self._get_anchor_processed_index(project_data, project_config)
         
-        # ✅ CORRECTION: En mode segmentation, total_frames = extracted_frames_count
-        if self.config.is_segment_mode:
-            total_frames = self.config.extracted_frames_count  # 34 dans votre cas
+        # En mode segmentation/event, total_frames = extracted_frames_count
+        if self.config.is_segment_mode or self.config.is_event_mode:
+            total_frames = self.config.extracted_frames_count
         else:
             total_frames = len([f for f in project_data['metadata']['frame_mapping'] if f is not None])
         
@@ -241,39 +241,52 @@ class AnnotationEnricher:
                                   project_config: Dict[str, Any]) -> int:
         """Calcule l'index de la frame d'ancrage dans les frames traitées"""
         
-        if self.config.is_segment_mode:
-            # Mode segmentation : utiliser la logique exacte du notebook
+        if self.config.is_segment_mode or self.config.is_event_mode:
+            # Mode segmentation ou event
             reference_frame_original = project_config['initial_annotations'][0].get('frame', 0)
             reference_frame_processed = reference_frame_original // self.config.FRAME_INTERVAL
             
-            # ✅ CORRECTION: Calculer les bornes du segment comme dans le notebook
+            # Calculer les bornes du segment
             import cv2
             cap = cv2.VideoCapture(str(self.config.video_path))
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             cap.release()
             
-            # Utiliser les offsets du config
-            offset_before_frames, offset_after_frames = self.config.get_segment_offsets_frames()
+            # Calculer les offsets en frames
+            fps = self.config.get_video_fps()
+            offset_before_frames = int((self.config.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+            offset_after_frames = int((self.config.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
             
-            # Calculer les bornes (même logique que video_processor)
-            start_frame = max(0, reference_frame_original - offset_before_frames)
-            end_frame = min(total_frames - 1, reference_frame_original + offset_after_frames)
+            if self.config.is_event_mode:
+                # Mode event : bornes basées sur l'event
+                start_frame = max(0, self.config.event_frame - offset_before_frames)
+                end_frame = min(total_frames - 1, self.config.event_frame + offset_after_frames)
+                
+                print(f"   🎯 Calcul anchor (mode event):")
+                print(f"      📍 Frame event: {self.config.event_frame}")
+                print(f"      📍 Frame annotation: {reference_frame_original}")
+                print(f"      📍 Segment: frames {start_frame} à {end_frame}")
+            else:
+                # Mode segment : bornes basées sur l'annotation
+                start_frame = max(0, reference_frame_original - offset_before_frames)
+                end_frame = min(total_frames - 1, reference_frame_original + offset_after_frames)
+                
+                print(f"   🎯 Calcul anchor (mode segmentation):")
+                print(f"      📍 Frame annotation: {reference_frame_original}")
+                print(f"      📍 Segment: frames {start_frame} à {end_frame}")
             
-            # ✅ CALCUL CORRECT : Index dans le segment
+            # Calculer l'index dans le segment
             segment_start_processed = start_frame // self.config.FRAME_INTERVAL
             anchor_frame_in_segment = reference_frame_processed - segment_start_processed
             
-            print(f"   🎯 Calcul anchor (mode segmentation):")
-            print(f"      📍 Frame originale: {reference_frame_original}")
-            print(f"      📍 Frame traitée: {reference_frame_processed}")
-            print(f"      📍 Segment start: {start_frame} → {segment_start_processed} (traité)")
+            print(f"      📍 Segment start traité: {segment_start_processed}")
             print(f"      📍 Index dans segment: {anchor_frame_in_segment}")
             
             # Vérification des bornes
             if anchor_frame_in_segment < 0 or anchor_frame_in_segment >= self.config.extracted_frames_count:
                 raise ValueError(f"❌ Index anchor {anchor_frame_in_segment} en dehors des frames disponibles [0, {self.config.extracted_frames_count - 1}]")
             
-            return anchor_frame_in_segment  # ← Index correct pour le segment
+            return anchor_frame_in_segment
             
         else:
             # Mode complet : utiliser le mapping

@@ -77,21 +77,38 @@ class VideoProcessor:
     
     def extract_segment_frames(self, reference_frame: int, 
                              force_extraction: bool = False) -> int:
-        """Extrait les frames du segment autour de la frame de référence"""
+        """
+        Extrait les frames du segment
         
-        # Calcul des bornes du segment
+        Args:
+            reference_frame: Frame d'annotation de référence
+            force_extraction: Force la ré-extraction même si les frames existent
+        """
+        
         cap = cv2.VideoCapture(str(self.config.video_path))
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
         
-        offset_before_frames, offset_after_frames = self.config.get_segment_offsets_frames()
-        
-        start_frame, end_frame, _, _ = self._calculate_segment_bounds(
-            reference_frame=reference_frame,
-            offset_before=offset_before_frames,
-            offset_after=offset_after_frames,
-            total_frames=total_frames
-        )
+        if self.config.is_event_mode:
+            # Mode event : extraire l'intervalle [event-before, event+after]
+            interval = self.config.create_event_interval(reference_frame)
+            start_frame = max(0, interval.start_frame)
+            end_frame = min(total_frames - 1, interval.end_frame)
+            
+            print(f"🎯 EXTRACTION MODE EVENT:")
+            print(f"   📍 Event frame: {interval.event_frame}")
+            print(f"   📍 Frame annotation: {reference_frame}")
+            print(f"   🎬 Intervalle: frames {start_frame} à {end_frame}")
+            
+        else:
+            # Mode segment classique : centré sur l'annotation
+            start_frame, end_frame = self.config.create_segment_bounds(reference_frame)
+            start_frame = max(0, start_frame)
+            end_frame = min(total_frames - 1, end_frame)
+            
+            print(f"🎯 EXTRACTION MODE SEGMENT:")
+            print(f"   📍 Frame référence: {reference_frame}")
+            print(f"   🎬 Segment: frames {start_frame} à {end_frame}")
         
         return self._extract_segment_frames(
             start_frame, end_frame, force_extraction
@@ -109,14 +126,19 @@ class VideoProcessor:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cap.release()
         
-        offset_before_frames, offset_after_frames = self.config.get_segment_offsets_frames()
+        if self.config.is_event_mode:
+            # Mode event
+            interval = self.config.create_event_interval(reference_frame)
+            start_frame = max(0, interval.start_frame)
+            end_frame = min(total_frames - 1, interval.end_frame)
+        else:
+            # Mode segment classique
+            start_frame, end_frame = self.config.create_segment_bounds(reference_frame)
+            start_frame = max(0, start_frame)
+            end_frame = min(total_frames - 1, end_frame)
         
-        start_frame, end_frame, processed_start_idx, processed_end_idx = self._calculate_segment_bounds(
-            reference_frame=reference_frame,
-            offset_before=offset_before_frames,
-            offset_after=offset_after_frames,
-            total_frames=total_frames
-        )
+        processed_start_idx = start_frame // self.config.FRAME_INTERVAL
+        processed_end_idx = end_frame // self.config.FRAME_INTERVAL
         
         return {
             'start_frame': start_frame,
