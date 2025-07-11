@@ -277,14 +277,7 @@ class EVA2SportPipeline:
         Returns:
             Dictionnaire avec les résultats et chemins de fichiers
         """
-        print("🚀 Démarrage de la pipeline complète EVA2SPORT")
-        print(f"   🎬 Vidéo: {self.config.VIDEO_NAME}")
-        if self.config.is_event_mode:
-            print(f"   🎯 Mode: Event (timestamp: {self.config.event_timestamp_seconds}s)")
-        elif self.config.is_segment_mode:
-            print(f"   🎯 Mode: Segmentation")
-        else:
-            print(f"   🎯 Mode: Complet")
+        self.config.display_config()
         
         try:
             # Étape 1: Charger la configuration
@@ -315,20 +308,7 @@ class EVA2SportPipeline:
                     print(f"⚠️ Export vidéo échoué (pipeline continue): {e}")
             
             # Résultats finaux
-            final_results = {
-                'status': 'success',
-                'video_name': self.config.VIDEO_NAME,
-                'frames_extracted': self.results.get('extracted_frames', 0),
-                'objects_tracked': len(self.results.get('added_objects', [])),
-                'total_annotations': sum(len(annotations) for annotations in self.project_data['annotations'].values()),
-                'frames_annotated': len(self.project_data['annotations']),
-                'export_paths': export_paths,
-                'config': {
-                    'frame_interval': self.config.FRAME_INTERVAL,
-                    'segment_mode': getattr(self.config, 'SEGMENT_MODE', False),
-                    'output_dir': str(self.config.output_dir)
-                }
-            }
+            final_results = self._create_final_results(export_paths)
             
             print("\n🎉 Pipeline terminée avec succès!")
             print(f"   📊 {final_results['frames_annotated']} frames traitées")
@@ -366,13 +346,20 @@ class EVA2SportPipeline:
         else:
             raise RuntimeError(f"Pipeline failed: {results['error']}")
 
-    def display_config(self):
-        """Affiche la configuration actuelle"""
-        print(f"🚀 Démarrage de la pipeline complète EVA2SPORT")
-        print(f"   🎬 Vidéo: {self.config.VIDEO_NAME}")
-        if self.config.is_event_mode:
-            print(f"   🎯 Mode: Event (timestamp: {self.config.event_timestamp_seconds}s)")
-        elif self.config.is_segment_mode:
-            print(f"   🎯 Mode: Segmentation")
-        else:
-            print(f"   🎯 Mode: Complet")
+    def _create_final_results(self, export_paths: Dict) -> Dict:
+        """Crée la structure des résultats finaux"""
+        return {
+            'status': 'success',
+            'video_name': self.config.VIDEO_NAME,
+            'frames_extracted': self.results.get('extracted_frames', 0),
+            'objects_tracked': len(self.results.get('added_objects', [])),
+            'total_annotations': sum(len(annotations) for annotations in self.project_data['annotations'].values()),
+            'frames_annotated': len(self.project_data['annotations']),
+            'export_paths': export_paths,
+            'config': {
+                'frame_interval': self.config.FRAME_INTERVAL,
+                'event_mode': self.config.is_event_mode,
+                'segment_mode': self.config.is_segment_mode,
+                'output_dir': str(self.config.output_dir)
+            }
+        }
