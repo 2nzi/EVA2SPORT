@@ -56,16 +56,30 @@ class EVA2SportPipeline:
         self.results = {}
     
     def load_project_config(self) -> Dict[str, Any]:
-        """Charge la configuration du projet depuis le JSON"""
+        """Charge la configuration du projet depuis les JSONs (séparés ou non)"""
         print("📄 Chargement de la configuration projet...")
-        
-        if not self.config.config_path.exists():
-            raise FileNotFoundError(f"❌ Fichier config non trouvé: {self.config.config_path}")
-        
-        with open(self.config.config_path, 'r', encoding='utf-8') as f:
-            self.project_config = json.load(f)
-        
-        print(f"✅ Configuration chargée: {len(self.project_config.get('objects', []))} objets")
+
+        # Chemins des nouveaux fichiers
+        calib_path = self.config.config_path.parent / f"{self.config.VIDEO_NAME}_calib.json"
+        objects_path = self.config.config_path.parent / f"{self.config.VIDEO_NAME}_objects.json"
+
+        if calib_path.exists() and objects_path.exists():
+            # Nouveau format : deux fichiers
+            with open(calib_path, 'r', encoding='utf-8') as f:
+                calib_data = json.load(f)
+            with open(objects_path, 'r', encoding='utf-8') as f:
+                objects_data = json.load(f)
+            # Fusionne les deux dictionnaires (sans écraser)
+            self.project_config = {**calib_data, **objects_data}
+            print(f"✅ Config séparée chargée : calibration + {len(self.project_config.get('objects', []))} objets")
+        elif self.config.config_path.exists():
+            # Ancien format : un seul fichier
+            with open(self.config.config_path, 'r', encoding='utf-8') as f:
+                self.project_config = json.load(f)
+            print(f"✅ Config unique chargée : {len(self.project_config.get('objects', []))} objets")
+        else:
+            raise FileNotFoundError("❌ Aucun fichier de configuration trouvé")
+
         return self.project_config
     
     def extract_frames(self, force: bool = False) -> int:
