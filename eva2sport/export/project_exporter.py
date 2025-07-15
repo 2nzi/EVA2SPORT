@@ -16,7 +16,7 @@ class ProjectExporter:
         self.config = config
     
     def save_project_json(self, project_data: Dict[str, Any], 
-                         compact: bool = True) -> Path:
+                         compact: bool = False) -> Path:
         """Sauvegarde le projet au format JSON"""
         
         print(f"💾 Sauvegarde du projet JSON...")
