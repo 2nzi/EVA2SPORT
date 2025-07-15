@@ -162,8 +162,8 @@ class AnnotationEnricher:
             project_config['initial_annotations']
         )
         
-        # Utiliser la méthode centralisée pour calculer les bornes et l'ancrage
-        _, _, anchor_frame_in_segment = self.config.calculate_segment_bounds_and_anchor(reference_frame)
+        # Utiliser la méthode centralisée pour calculer les bornes et l'ancrage (sans logs répétés)
+        _, _, anchor_frame_in_segment = self.config.calculate_segment_bounds_and_anchor(reference_frame, verbose=False)
         
         return anchor_frame_in_segment
             
@@ -240,8 +240,8 @@ class AnnotationEnricher:
                 project_config['initial_annotations']
             )
             
-            # Utiliser la méthode centralisée pour calculer les bornes et l'ancrage
-            _, _, anchor_frame_in_segment = self.config.calculate_segment_bounds_and_anchor(reference_frame)
+            # Utiliser la méthode centralisée pour calculer les bornes et l'ancrage (sans logs répétés)
+            _, _, anchor_frame_in_segment = self.config.calculate_segment_bounds_and_anchor(reference_frame, verbose=False)
             
             return anchor_frame_in_segment
             

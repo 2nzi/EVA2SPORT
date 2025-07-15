@@ -114,11 +114,7 @@ def test_event_mode_pipeline():
         )
         print(f"   ✅ Pipeline créée pour event à {event_timestamp}s")
         
-        # 2. Afficher la configuration
-        print("1. 📋 Configuration:")
-        pipeline.config.display_config()
-        
-        # 3. Exécution complète avec export vidéo
+        # 2. Exécution complète avec export vidéo
         print("\n3. 🚀 Exécution pipeline complète mode event...")
         print("   ⚡ Cela peut prendre plusieurs minutes...")
 
@@ -197,11 +193,10 @@ def test_event_mode_pipeline_multiple_events():
             pipeline = EVA2SportPipeline(
                 video_name,
                 event_timestamp_seconds=event_timestamp,
-                segment_offset_before_seconds=10.0,
-                segment_offset_after_seconds=10.0
+                segment_offset_before_seconds=5.0,
+                segment_offset_after_seconds=5.0
             )
             print(f"   ✅ Pipeline créée pour event à {event_timestamp}s")
-            pipeline.config.display_config()
 
             results = pipeline.run_full_pipeline(
                 force_extraction=True,

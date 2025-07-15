@@ -147,10 +147,14 @@ class Config:
         )
         return closest_ann.get('frame', 0)
     
-    def calculate_segment_bounds_and_anchor(self, reference_frame: int) -> Tuple[int, int, int]:
+    def calculate_segment_bounds_and_anchor(self, reference_frame: int, verbose: bool = True) -> Tuple[int, int, int]:
         """
         Calcule les bornes du segment et l'index d'ancrage de manière centralisée
         
+        Args:
+            reference_frame: Frame de référence pour l'annotation
+            verbose: Afficher les logs de calcul
+            
         Returns:
             Tuple[start_frame, end_frame, anchor_frame_in_segment]
         """
@@ -169,23 +173,35 @@ class Config:
             start_frame = max(0, self.event_frame - offset_before_frames)
             end_frame = min(total_frames - 1, self.event_frame + offset_after_frames)
             
-            print(f"   🎯 Calcul bounds (mode event):")
-            print(f"      📍 Frame event: {self.event_frame}")
-            print(f"      📍 Frame annotation: {reference_frame}")
-            print(f"      📍 Segment: frames {start_frame} à {end_frame}")
+            if verbose:
+                print(f"   🎯 Calcul bounds (mode event):")
+                print(f"      📍 Frame event: {self.event_frame}")
+                print(f"      📍 Frame annotation: {reference_frame}")
+                print(f"      📍 Segment: frames {start_frame} à {end_frame}")
         else:
             # Mode segment : bornes basées sur l'annotation
             start_frame = max(0, reference_frame - offset_before_frames)
             end_frame = min(total_frames - 1, reference_frame + offset_after_frames)
             
-            print(f"   🎯 Calcul bounds (mode segment):")
-            print(f"      📍 Frame annotation: {reference_frame}")
-            print(f"      📍 Segment: frames {start_frame} à {end_frame}")
+            if verbose:
+                print(f"   🎯 Calcul bounds (mode segment):")
+                print(f"      📍 Frame annotation: {reference_frame}")
+                print(f"      📍 Segment: frames {start_frame} à {end_frame}")
         
-        # Calculer l'index d'ancrage dans le segment
-        anchor_frame_in_segment = reference_frame - start_frame
+        # CORRECTION CRITIQUE : Calculer l'index d'ancrage correctement
+        # L'ancrage doit être calculé en tenant compte du FRAME_INTERVAL
         
-        print(f"      📍 Anchor frame in segment: {anchor_frame_in_segment}")
+        # Convertir en frames traitées
+        reference_frame_processed = reference_frame // self.FRAME_INTERVAL
+        start_frame_processed = start_frame // self.FRAME_INTERVAL
+        
+        # L'index d'ancrage dans le segment traité
+        anchor_frame_in_segment = reference_frame_processed - start_frame_processed
+        
+        if verbose:
+            print(f"      📍 Reference frame: {reference_frame} → {reference_frame_processed} (processed)")
+            print(f"      📍 Start frame: {start_frame} → {start_frame_processed} (processed)")
+            print(f"      📍 Anchor frame in segment: {anchor_frame_in_segment}")
         
         # Validation des bornes
         if start_frame >= end_frame:
@@ -246,8 +262,8 @@ class Config:
         if not self.is_segment_mode:
             raise ValueError("Non configuré pour le mode segment")
         
-        # Utiliser la méthode centralisée pour calculer les bornes
-        start_frame, end_frame, _ = self.calculate_segment_bounds_and_anchor(reference_frame)
+        # Utiliser la méthode centralisée pour calculer les bornes (sans logs répétés)
+        start_frame, end_frame, _ = self.calculate_segment_bounds_and_anchor(reference_frame, verbose=False)
         return start_frame, end_frame
     
     def display_config(self):

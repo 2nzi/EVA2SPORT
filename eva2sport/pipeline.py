@@ -84,8 +84,6 @@ class EVA2SportPipeline:
     
     def extract_frames(self, force: bool = False, event_frame: int = None) -> int:
         """Extrait les frames de la vidéo"""
-        print("🎬 Extraction des frames...")
-
         # Utiliser la valeur de config si event_frame n'est pas fourni explicitement
         if event_frame is None:
             event_frame = self.config.event_frame
