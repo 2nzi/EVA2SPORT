@@ -82,16 +82,33 @@ class EVA2SportPipeline:
 
         return self.project_config
     
-    def extract_frames(self, force: bool = False) -> int:
+    def extract_frames(self, force: bool = False, event_frame: int = None) -> int:
         """Extrait les frames de la vidéo"""
         print("🎬 Extraction des frames...")
-        
+
+        # Utiliser la valeur de config si event_frame n'est pas fourni explicitement
+        if event_frame is None:
+            event_frame = self.config.event_frame
+            print("event frame : ",event_frame)
+
         if self.config.is_segment_mode or self.config.is_event_mode:
-            # Mode segmentation ou event
             if not self.project_config:
-                raise ValueError("❌ Configuration projet. requise pour le mode segmentation/event")
+                raise ValueError("❌ Configuration projet requise pour le mode segmentation/event")
             
-            reference_frame = self.project_config['initial_annotations'][0].get('frame', 0)
+            initial_annotations = self.project_config['initial_annotations']
+            if event_frame is not None and initial_annotations:
+                # Prendre l'annotation initiale la plus proche de l'event
+                closest_ann = min(
+                    initial_annotations,
+                    key=lambda ann: abs(ann.get('frame', 0) - event_frame)
+                )
+                reference_frame = closest_ann.get('frame', 0)
+            else:
+                # Fallback: première annotation
+                reference_frame = initial_annotations[0].get('frame', 0)
+            
+            
+            self.results['reference_frame'] = reference_frame
             frames_count = self.video_processor.extract_segment_frames(
                 reference_frame=reference_frame,
                 force_extraction=force
@@ -102,7 +119,7 @@ class EVA2SportPipeline:
         
         self.config.extracted_frames_count = frames_count
         self.results['extracted_frames'] = frames_count
-        
+
         print(f"✅ {frames_count} frames extraites")
         return frames_count
     
@@ -119,13 +136,28 @@ class EVA2SportPipeline:
             raise ValueError("❌ Configuration projet requise")
         
         segment_info = None
-        if self.config.is_segment_mode:
-            segment_info = self.video_processor.get_segment_info(
-                self.project_config['initial_annotations'][0].get('frame', 0)
-            )
-        
+        if self.config.is_segment_mode or self.config.is_event_mode:
+            # Utilise la frame de référence choisie lors de l’extraction
+            reference_frame = self.results.get('reference_frame')
+            if reference_frame is None:
+                reference_frame = self.project_config['initial_annotations'][0].get('frame', 0)
+            segment_info = self.video_processor.get_segment_info(reference_frame)
+
+            # Filtrer les initial_annotations pour ne garder que celle(s) dans le segment
+            start_frame = segment_info['start_frame']
+            end_frame = segment_info['end_frame']
+            filtered_initial_annotations = [
+                ann for ann in self.project_config['initial_annotations']
+                if start_frame <= ann.get('frame', 0) <= end_frame
+            ]
+            # Créer une copie temporaire du project_config pour l’appel
+            project_config_filtered = dict(self.project_config)
+            project_config_filtered['initial_annotations'] = filtered_initial_annotations
+        else:
+            project_config_filtered = self.project_config
+
         added_objects, annotations_data = self.sam2_tracker.add_initial_annotations(
-            self.project_config, segment_info
+            project_config_filtered, segment_info
         )
         
         self.results['added_objects'] = added_objects

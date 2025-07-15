@@ -50,7 +50,7 @@ def test_export_terrain_complet():
         
         video_path = pipeline.export_video(
             fps=fps,
-            cleanup_frames=False,
+            cleanup_frames=True,
             force_regenerate=True,
             minimap_config={
                 'half_field': 'full',
@@ -88,7 +88,7 @@ def test_export_demi_terrain_gauche():
         video_path = pipeline.export_video(
             fps=fps,
             preset='tactical_analysis',
-            cleanup_frames=False,
+            cleanup_frames=True,
             force_regenerate=True,
             minimap_config={
                 'half_field': 'left',
@@ -123,7 +123,7 @@ def test_export_demi_terrain_droit():
         video_path = pipeline.export_video(
             fps=fps,
             preset='fast_preview',
-            cleanup_frames=False,
+            cleanup_frames=True,
             force_regenerate=True,
             minimap_config={
                 'half_field': 'right',
@@ -158,7 +158,7 @@ def test_export_style_broadcast():
         video_path = pipeline.export_video(
             fps=fps,
             preset='high_quality',
-            cleanup_frames=False,
+            cleanup_frames=True,
             force_regenerate=True,
             minimap_config={
                 'half_field': 'full',
@@ -192,7 +192,7 @@ def test_export_avec_preset():
         
         video_path = pipeline.export_video(
             fps=fps,
-            cleanup_frames=False,
+            cleanup_frames=True,
             force_regenerate=True,
             minimap_config={}
         )
