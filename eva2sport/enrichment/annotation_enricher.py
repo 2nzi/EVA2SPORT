@@ -170,10 +170,60 @@ class AnnotationEnricher:
         if not project_config.get('initial_annotations'):
             return 0
         
-        original_frame = project_config['initial_annotations'][0].get('frame', 0)
-        processed_frame = original_frame // self.config.FRAME_INTERVAL
-        return processed_frame
-    
+        # Détermine la frame cible (event ou segment)
+        if hasattr(self.config, "event_frame") and self.config.event_frame is not None:
+            target_frame = self.config.event_frame
+        else:
+            target_frame = 0  # fallback
+
+        # Prendre l'annotation initiale la plus proche de la frame cible
+        initial_annotations = project_config['initial_annotations']
+        closest_ann = get_closest_initial_annotation(initial_annotations, target_frame)
+        reference_frame_original = closest_ann.get('frame', 0)
+        reference_frame_processed = reference_frame_original // self.config.FRAME_INTERVAL
+        
+        # Calculer les bornes du segment
+        import cv2
+        cap = cv2.VideoCapture(str(self.config.video_path))
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
+        
+        # Calculer les offsets en frames
+        fps = self.config.get_video_fps()
+        offset_before_frames = int((self.config.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+        offset_after_frames = int((self.config.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
+        
+        if self.config.is_event_mode:
+            # Mode event : bornes basées sur l'event
+            start_frame = max(0, self.config.event_frame - offset_before_frames)
+            end_frame = min(total_frames - 1, self.config.event_frame + offset_after_frames)
+            
+            print(f"   🎯 Calcul anchor (mode event):")
+            print(f"      📍 Frame event: {self.config.event_frame}")
+            print(f"      📍 Frame annotation: {reference_frame_original}")
+            print(f"      📍 Segment: frames {start_frame} à {end_frame}")
+        else:
+            # Mode segment : bornes basées sur l'annotation
+            start_frame = max(0, reference_frame_original - offset_before_frames)
+            end_frame = min(total_frames - 1, reference_frame_original + offset_after_frames)
+            
+            print(f"   🎯 Calcul anchor (mode segmentation):")
+            print(f"      📍 Frame annotation: {reference_frame_original}")
+            print(f"      📍 Segment: frames {start_frame} à {end_frame}")
+        
+        # Calculer l'index dans le segment
+        segment_start_processed = start_frame // self.config.FRAME_INTERVAL
+        anchor_frame_in_segment = reference_frame_processed - segment_start_processed
+        
+        print(f"      📍 Segment start traité: {segment_start_processed}")
+        print(f"      📍 Index dans segment: {anchor_frame_in_segment}")
+        
+        # Vérification des bornes
+        if anchor_frame_in_segment < 0 or anchor_frame_in_segment >= self.config.extracted_frames_count:
+            raise ValueError(f"❌ Index anchor {anchor_frame_in_segment} en dehors des frames disponibles [0, {self.config.extracted_frames_count - 1}]")
+        
+        return anchor_frame_in_segment
+            
     def _generate_frame_mapping(self, total_frames: int, anchor_frame: int) -> Tuple[List[Optional[int]], List[int]]:
         """Génère le mapping frame_originale → frame_traitée"""
         frame_mapping = [None] * total_frames
@@ -242,8 +292,16 @@ class AnnotationEnricher:
         """Calcule l'index de la frame d'ancrage dans les frames traitées"""
         
         if self.config.is_segment_mode or self.config.is_event_mode:
-            # Mode segmentation ou event
-            reference_frame_original = project_config['initial_annotations'][0].get('frame', 0)
+            # Détermine la frame cible (event ou segment)
+            if hasattr(self.config, "event_frame") and self.config.event_frame is not None:
+                target_frame = self.config.event_frame
+            else:
+                target_frame = 0  # fallback
+
+            # Prendre l'annotation initiale la plus proche de la frame cible
+            initial_annotations = project_config['initial_annotations']
+            closest_ann = get_closest_initial_annotation(initial_annotations, target_frame)
+            reference_frame_original = closest_ann.get('frame', 0)
             reference_frame_processed = reference_frame_original // self.config.FRAME_INTERVAL
             
             # Calculer les bornes du segment
@@ -403,3 +461,10 @@ class AnnotationEnricher:
 
         except Exception:
             return None
+
+def get_closest_initial_annotation(initial_annotations, target_frame):
+    """Retourne l'annotation initiale la plus proche de la frame cible"""
+    return min(
+        initial_annotations,
+        key=lambda ann: abs(ann.get('frame', 0) - target_frame)
+    )

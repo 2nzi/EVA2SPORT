@@ -75,3 +75,6 @@ SAM_inference_NoNZeroFrameInput.ipynb
 
 requirements.txt
 uv.lock
+
+
+SAM_EVA2SPORT.ipynb

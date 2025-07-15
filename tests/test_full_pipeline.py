@@ -197,8 +197,8 @@ def test_event_mode_pipeline_multiple_events():
             pipeline = EVA2SportPipeline(
                 video_name,
                 event_timestamp_seconds=event_timestamp,
-                segment_offset_before_seconds=3.0,
-                segment_offset_after_seconds=3.0
+                segment_offset_before_seconds=10.0,
+                segment_offset_after_seconds=10.0
             )
             print(f"   ✅ Pipeline créée pour event à {event_timestamp}s")
             pipeline.config.display_config()
