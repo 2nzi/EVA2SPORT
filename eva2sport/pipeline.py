@@ -96,20 +96,13 @@ class EVA2SportPipeline:
                 raise ValueError("❌ Configuration projet requise pour le mode segmentation/event")
             
             initial_annotations = self.project_config['initial_annotations']
-            if event_frame is not None and initial_annotations:
-                # Prendre l'annotation initiale la plus proche de l'event
-                print(f"event_frame demandé: {event_frame}")
-                print("Frames des initial_annotations:", [ann.get('frame', 0) for ann in initial_annotations])
-                closest_ann = min(
-                    initial_annotations,
-                    key=lambda ann: abs(ann.get('frame', 0) - event_frame)
-                )
-                print(f"Frame choisie: {closest_ann.get('frame', 0)}")
-                reference_frame = closest_ann.get('frame', 0)
-            else:
-                # Fallback: première annotation
-                reference_frame = initial_annotations[0].get('frame', 0)
             
+            # Utiliser la méthode centralisée pour sélectionner l'annotation la plus proche
+            reference_frame = self.config.get_closest_initial_annotation_frame(initial_annotations)
+            
+            print(f"event_frame demandé: {event_frame}")
+            print("Frames des initial_annotations:", [ann.get('frame', 0) for ann in initial_annotations])
+            print(f"Frame choisie: {reference_frame}")
             
             self.results['reference_frame'] = reference_frame
             frames_count = self.video_processor.extract_segment_frames(

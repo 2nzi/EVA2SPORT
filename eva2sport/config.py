@@ -4,7 +4,7 @@ Environnement local/production uniquement
 """
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 from dataclasses import dataclass
 import torch
 
@@ -135,6 +135,71 @@ class Config:
         print("✅ Tous les prérequis sont présents")
         return True
     
+    def get_closest_initial_annotation_frame(self, initial_annotations: List[Dict]) -> int:
+        """Retourne la frame de l'annotation initiale la plus proche de l'event/target"""
+        if not initial_annotations:
+            return 0
+        
+        target_frame = self.event_frame if self.event_frame is not None else 0
+        closest_ann = min(
+            initial_annotations,
+            key=lambda ann: abs(ann.get('frame', 0) - target_frame)
+        )
+        return closest_ann.get('frame', 0)
+    
+    def calculate_segment_bounds_and_anchor(self, reference_frame: int) -> Tuple[int, int, int]:
+        """
+        Calcule les bornes du segment et l'index d'ancrage de manière centralisée
+        
+        Returns:
+            Tuple[start_frame, end_frame, anchor_frame_in_segment]
+        """
+        import cv2
+        
+        # Obtenir les informations vidéo
+        cap = cv2.VideoCapture(str(self.video_path))
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        cap.release()
+        
+        # Calculer les offsets en frames
+        fps = self.get_video_fps()
+        offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+        offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
+        
+        # Calculer les bornes selon le mode
+        if self.is_event_mode:
+            # Mode event : bornes basées sur l'event
+            start_frame = max(0, self.event_frame - offset_before_frames)
+            end_frame = min(total_frames - 1, self.event_frame + offset_after_frames)
+            
+            print(f"   🎯 Calcul bounds (mode event):")
+            print(f"      📍 Frame event: {self.event_frame}")
+            print(f"      📍 Frame annotation: {reference_frame}")
+            print(f"      📍 Segment: frames {start_frame} à {end_frame}")
+        else:
+            # Mode segment : bornes basées sur l'annotation
+            start_frame = max(0, reference_frame - offset_before_frames)
+            end_frame = min(total_frames - 1, reference_frame + offset_after_frames)
+            
+            print(f"   🎯 Calcul bounds (mode segmentation):")
+            print(f"      📍 Frame annotation: {reference_frame}")
+            print(f"      📍 Segment: frames {start_frame} à {end_frame}")
+        
+        # Calculer l'index dans le segment
+        reference_frame_processed = reference_frame // self.FRAME_INTERVAL
+        segment_start_processed = start_frame // self.FRAME_INTERVAL
+        anchor_frame_in_segment = reference_frame_processed - segment_start_processed
+        
+        print(f"      📍 Segment start traité: {segment_start_processed}")
+        print(f"      📍 Index dans segment: {anchor_frame_in_segment}")
+        
+        # Vérification des bornes
+        if hasattr(self, 'extracted_frames_count') and self.extracted_frames_count > 0:
+            if anchor_frame_in_segment < 0 or anchor_frame_in_segment >= self.extracted_frames_count:
+                raise ValueError(f"❌ Index anchor {anchor_frame_in_segment} en dehors des frames disponibles [0, {self.extracted_frames_count - 1}]")
+        
+        return start_frame, end_frame, anchor_frame_in_segment
+
     @property
     def is_segment_mode(self) -> bool:
         """Détermine automatiquement si on est en mode segmentation"""
