@@ -37,15 +37,17 @@ class VideoProcessor:
             for frame_file in existing_frames:
                 frame_file.unlink()
 
-        cap = cv2.VideoCapture(str(self.config.video_path))
-        if not cap.isOpened():
-            raise ValueError(f"❌ Impossible d'ouvrir la vidéo: {self.config.video_path}")
-
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        # Utiliser la méthode centralisée pour obtenir les informations vidéo
+        video_info = self.config.get_video_info()
+        total_frames = video_info['total_frames']
+        fps = video_info['fps']
 
         print(f"📊 Vidéo: {total_frames} frames, {fps:.1f} FPS")
         print(f"📊 Frames à extraire: ~{total_frames // self.config.FRAME_INTERVAL}")
+
+        cap = cv2.VideoCapture(str(self.config.video_path))
+        if not cap.isOpened():
+            raise ValueError(f"❌ Impossible d'ouvrir la vidéo: {self.config.video_path}")
 
         extracted_count = 0
         frame_idx = 0
@@ -76,7 +78,7 @@ class VideoProcessor:
         return extracted_count
     
     def extract_segment_frames(self, reference_frame: int, 
-                             force_extraction: bool = False) -> int:
+                              force_extraction: bool = False) -> int:
         """
         Extrait les frames du segment
         
@@ -85,9 +87,9 @@ class VideoProcessor:
             force_extraction: Force la ré-extraction même si les frames existent
         """
         
-        cap = cv2.VideoCapture(str(self.config.video_path))
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        cap.release()
+        # Utiliser la méthode centralisée pour obtenir les informations vidéo
+        video_info = self.config.get_video_info()
+        total_frames = video_info['total_frames']
         
         if self.config.is_event_mode:
             # Mode event : extraire l'intervalle [event-before, event+after]
@@ -122,9 +124,9 @@ class VideoProcessor:
     def get_segment_info(self, reference_frame: int) -> Dict[str, Any]:
         """Récupère les informations du segment pour la frame de référence"""
         
-        cap = cv2.VideoCapture(str(self.config.video_path))
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        cap.release()
+        # Utiliser la méthode centralisée pour obtenir les informations vidéo
+        video_info = self.config.get_video_info()
+        total_frames = video_info['total_frames']
         
         if self.config.is_event_mode:
             # Mode event

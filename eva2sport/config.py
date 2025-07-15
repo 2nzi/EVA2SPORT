@@ -4,7 +4,7 @@ Environnement local/production uniquement
 """
 
 from pathlib import Path
-from typing import Optional, Tuple, List, Dict
+from typing import Optional, Tuple, List, Dict, Any
 from dataclasses import dataclass
 import torch
 
@@ -154,15 +154,12 @@ class Config:
         Returns:
             Tuple[start_frame, end_frame, anchor_frame_in_segment]
         """
-        import cv2
-        
-        # Obtenir les informations vidéo
-        cap = cv2.VideoCapture(str(self.video_path))
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        cap.release()
+        # Utiliser la méthode centralisée pour obtenir les informations vidéo
+        video_info = self.get_video_info()
+        total_frames = video_info['total_frames']
+        fps = video_info['fps']
         
         # Calculer les offsets en frames
-        fps = self.get_video_fps()
         offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
         offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
         
@@ -181,22 +178,21 @@ class Config:
             start_frame = max(0, reference_frame - offset_before_frames)
             end_frame = min(total_frames - 1, reference_frame + offset_after_frames)
             
-            print(f"   🎯 Calcul bounds (mode segmentation):")
+            print(f"   🎯 Calcul bounds (mode segment):")
             print(f"      📍 Frame annotation: {reference_frame}")
             print(f"      📍 Segment: frames {start_frame} à {end_frame}")
         
-        # Calculer l'index dans le segment
-        reference_frame_processed = reference_frame // self.FRAME_INTERVAL
-        segment_start_processed = start_frame // self.FRAME_INTERVAL
-        anchor_frame_in_segment = reference_frame_processed - segment_start_processed
+        # Calculer l'index d'ancrage dans le segment
+        anchor_frame_in_segment = reference_frame - start_frame
         
-        print(f"      📍 Segment start traité: {segment_start_processed}")
-        print(f"      📍 Index dans segment: {anchor_frame_in_segment}")
+        print(f"      📍 Anchor frame in segment: {anchor_frame_in_segment}")
         
-        # Vérification des bornes
-        if hasattr(self, 'extracted_frames_count') and self.extracted_frames_count > 0:
-            if anchor_frame_in_segment < 0 or anchor_frame_in_segment >= self.extracted_frames_count:
-                raise ValueError(f"❌ Index anchor {anchor_frame_in_segment} en dehors des frames disponibles [0, {self.extracted_frames_count - 1}]")
+        # Validation des bornes
+        if start_frame >= end_frame:
+            raise ValueError(f"❌ Bornes invalides: start={start_frame}, end={end_frame}")
+        
+        if anchor_frame_in_segment < 0:
+            raise ValueError(f"❌ Anchor frame invalide: {anchor_frame_in_segment}")
         
         return start_frame, end_frame, anchor_frame_in_segment
 
@@ -249,14 +245,9 @@ class Config:
         """Crée les bornes du segment pour une frame de référence (mode segment classique)"""
         if not self.is_segment_mode:
             raise ValueError("Non configuré pour le mode segment")
-            
-        fps = self.get_video_fps()
-        offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
-        offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
         
-        start_frame = max(0, reference_frame - offset_before_frames)
-        end_frame = reference_frame + offset_after_frames
-        
+        # Utiliser la méthode centralisée pour calculer les bornes
+        start_frame, end_frame, _ = self.calculate_segment_bounds_and_anchor(reference_frame)
         return start_frame, end_frame
     
     def display_config(self):
@@ -280,16 +271,68 @@ class Config:
         else:
             print(f"   🎯 Mode: Vidéo complète")
     
-    # Méthodes utilitaires (FPS, etc.) - comme avant mais sans logique Colab
-    def get_video_fps(self) -> float:
+    # Méthodes utilitaires centralisées pour l'accès vidéo
+    def get_video_info(self) -> Dict[str, Any]:
+        """
+        Méthode centralisée pour récupérer toutes les informations vidéo
+        Évite la duplication d'ouverture de cv2.VideoCapture
+        
+        Returns:
+            Dict contenant: fps, total_frames, width, height, duration_seconds
+        """
         if not self.video_path.exists():
-            return 25.0
+            return {
+                'fps': 25.0,
+                'total_frames': 0,
+                'width': 1920,
+                'height': 1080,
+                'duration_seconds': 0.0
+            }
         
         import cv2
         cap = cv2.VideoCapture(str(self.video_path))
-        fps = cap.get(cv2.CAP_PROP_FPS) if cap.isOpened() else 25.0
+        
+        if not cap.isOpened():
+            cap.release()
+            return {
+                'fps': 25.0,
+                'total_frames': 0,
+                'width': 1920,
+                'height': 1080,
+                'duration_seconds': 0.0
+            }
+        
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        
         cap.release()
-        return fps if fps > 0 else 25.0
+        
+        # Valeurs par défaut si invalides
+        fps = fps if fps > 0 else 25.0
+        duration_seconds = total_frames / fps if fps > 0 and total_frames > 0 else 0.0
+        
+        return {
+            'fps': fps,
+            'total_frames': total_frames,
+            'width': width,
+            'height': height,
+            'duration_seconds': duration_seconds
+        }
+
+    def get_video_fps(self) -> float:
+        """Récupère le FPS de la vidéo (utilise la méthode centralisée)"""
+        return self.get_video_info()['fps']
+    
+    def get_video_total_frames(self) -> int:
+        """Récupère le nombre total de frames (utilise la méthode centralisée)"""
+        return self.get_video_info()['total_frames']
+    
+    def get_video_dimensions(self) -> Tuple[int, int]:
+        """Récupère les dimensions de la vidéo (width, height)"""
+        info = self.get_video_info()
+        return info['width'], info['height']
     
     def seconds_to_frames(self, seconds: float, fps: float = None) -> int:
         if fps is None:
@@ -301,6 +344,7 @@ class Config:
         if not self.is_segment_mode:
             raise ValueError("❌ Les offsets ne sont disponibles qu'en mode segmentation")
         
+        # Utiliser la méthode centralisée pour obtenir le FPS
         fps = self.get_video_fps()
         offset_before = self.seconds_to_frames(self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0, fps)
         offset_after = self.seconds_to_frames(self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0, fps)

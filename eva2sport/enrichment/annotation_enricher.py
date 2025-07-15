@@ -149,21 +149,8 @@ class AnnotationEnricher:
         return project_data
     
     def _get_video_info(self) -> Dict[str, Any]:
-        """Récupère les informations de la vidéo"""
-        import cv2
-        
-        cap = cv2.VideoCapture(str(self.config.video_path))
-        if not cap.isOpened():
-            raise ValueError(f"❌ Impossible d'ouvrir la vidéo: {self.config.video_path}")
-        
-        video_info = {
-            'total_frames': int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
-            'fps': cap.get(cv2.CAP_PROP_FPS),
-            'width': int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-            'height': int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        }
-        cap.release()
-        return video_info
+        """Récupère les informations de la vidéo (utilise la méthode centralisée)"""
+        return self.config.get_video_info()
     
     def _get_anchor_frame(self, project_config: Dict[str, Any]) -> int:
         """Récupère la frame d'ancrage depuis la configuration"""
