@@ -95,11 +95,16 @@ class EVA2SportPipeline:
             
             initial_annotations = self.project_config['initial_annotations']
             
-            # Utiliser la méthode centralisée pour sélectionner l'annotation la plus proche
-            reference_frame = self.config.get_closest_initial_annotation_frame(initial_annotations)
+            # Utiliser la méthode centralisée pour sélectionner l'annotation la plus proche ET valide
+            reference_frame = self.config.get_closest_valid_annotation_frame(initial_annotations)
             
             print(f"event_frame demandé: {event_frame}")
             print("Frames des initial_annotations:", [ann.get('frame', 0) for ann in initial_annotations])
+            
+            if reference_frame is None:
+                print("❌ Aucune annotation valide trouvée dans l'intervalle de l'événement")
+                return 0
+            
             print(f"Frame choisie: {reference_frame}")
             
             self.results['reference_frame'] = reference_frame

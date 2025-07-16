@@ -35,6 +35,7 @@ class Config:
                  segment_offset_before_seconds: Optional[float] = None,
                  segment_offset_after_seconds: Optional[float] = None,
                  event_timestamp_seconds: Optional[float] = None,
+                 create_directories: bool = True,
                  **kwargs):
         """
         Configuration simple et prévisible
@@ -78,7 +79,10 @@ class Config:
         # Setup
         self._setup_paths()
         self._setup_device()
-        self.setup_directories()
+        
+        # Créer les dossiers seulement si demandé
+        if create_directories:
+            self.setup_directories()
         
         # Initialiser event_frame après setup (besoin du FPS)
         if self.event_timestamp_seconds is not None:
@@ -156,6 +160,68 @@ class Config:
             key=lambda ann: abs(ann.get('frame', 0) - target_frame)
         )
         return closest_ann.get('frame', 0)
+    
+    def has_valid_annotation_in_event_interval(self, initial_annotations: List[Dict]) -> bool:
+        """Vérifie s'il y a au moins une annotation valide dans l'intervalle de l'événement"""
+        if not self.is_event_mode or not initial_annotations:
+            return False
+        
+        # Calculer les bornes de l'intervalle event
+        fps = self.get_video_fps()
+        offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+        offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
+        
+        start_frame = max(0, self.event_frame - offset_before_frames)
+        end_frame = self.event_frame + offset_after_frames
+        
+        # Vérifier s'il y a au moins une annotation dans l'intervalle
+        for ann in initial_annotations:
+            annotation_frame = ann.get('frame', 0)
+            if start_frame <= annotation_frame <= end_frame:
+                return True
+        
+        return False
+    
+    def get_closest_valid_annotation_frame(self, initial_annotations: List[Dict]) -> Optional[int]:
+        """Retourne la frame de l'annotation la plus proche ET valide dans l'intervalle"""
+        if not initial_annotations:
+            return None
+        
+        if self.is_event_mode:
+            # En mode event, ne prendre que les annotations dans l'intervalle
+            if not self.has_valid_annotation_in_event_interval(initial_annotations):
+                return None
+            
+            # Filtrer pour ne garder que les annotations dans l'intervalle
+            fps = self.get_video_fps()
+            offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+            offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
+            
+            start_frame = max(0, self.event_frame - offset_before_frames)
+            end_frame = self.event_frame + offset_after_frames
+            
+            valid_annotations = [
+                ann for ann in initial_annotations 
+                if start_frame <= ann.get('frame', 0) <= end_frame
+            ]
+            
+            if not valid_annotations:
+                return None
+            
+            # Prendre la plus proche de l'event_frame parmi les valides
+            closest_ann = min(
+                valid_annotations,
+                key=lambda ann: abs(ann.get('frame', 0) - self.event_frame)
+            )
+            return closest_ann.get('frame', 0)
+        else:
+            # En mode segment, prendre la plus proche du target
+            target_frame = self.event_frame if self.event_frame is not None else 0
+            closest_ann = min(
+                initial_annotations,
+                key=lambda ann: abs(ann.get('frame', 0) - target_frame)
+            )
+            return closest_ann.get('frame', 0)
     
     def calculate_segment_bounds_and_anchor(self, reference_frame: int, verbose: bool = True) -> Tuple[int, int, int]:
         """

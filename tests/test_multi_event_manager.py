@@ -19,7 +19,7 @@ def test_multi_event_manager_complete():
     print("=" * 70)
     
     video_name = "SD_13_06_2025_cam1"
-    event_timestamps = [959.696, 1029.001]  # Réduire pour test plus rapide
+    event_timestamps = [750.381,959.696, 1029.001]  # Réduire pour test plus rapide
     
     try:
         # 1. Créer le gestionnaire

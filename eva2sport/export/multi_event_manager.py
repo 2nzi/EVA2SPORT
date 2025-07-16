@@ -90,6 +90,15 @@ class MultiEventManager:
             pipeline_kwargs.pop('segment_offset_before_seconds', None)
             pipeline_kwargs.pop('segment_offset_after_seconds', None)
             
+            # Vérifier s'il y a des annotations valides AVANT de créer toute config
+            if not self._has_valid_annotations_for_event(
+                event_timestamp, 
+                segment_offset_before_seconds, 
+                segment_offset_after_seconds
+            ):
+                print(f"   ❌ Événement {event_id} ignoré - pas de tracking possible")
+                return None
+            
             # Créer et exécuter la pipeline pour cet événement
             pipeline = EVA2SportPipeline(
                 self.video_name,
@@ -218,10 +227,101 @@ class MultiEventManager:
         return None
     
     def _save_index(self):
-        """Sauvegarde l'index global"""
-        self.base_output_dir.mkdir(parents=True, exist_ok=True)
+        """Sauvegarde l'index des événements"""
+        # S'assurer que le dossier parent existe
+        self.index_file.parent.mkdir(parents=True, exist_ok=True)
         with open(self.index_file, 'w', encoding='utf-8') as f:
             json.dump(self.events_index, f, indent=2, ensure_ascii=False)
+    
+    def _has_valid_annotations_for_event(self, event_timestamp: float,
+                                        segment_offset_before_seconds: float,
+                                        segment_offset_after_seconds: float) -> bool:
+        """
+        Vérifie s'il y a des annotations valides dans l'intervalle de l'événement
+        SANS créer de config temporaire pour éviter la création de dossiers
+        
+        Args:
+            event_timestamp: Timestamp de l'événement
+            segment_offset_before_seconds: Offset avant
+            segment_offset_after_seconds: Offset après
+            
+        Returns:
+            True si au moins une annotation est dans l'intervalle
+        """
+        import json
+        import cv2
+        
+        # Charger la configuration du projet directement
+        videos_dir = self.working_dir / "data" / "videos"
+        config_path = videos_dir / f"{self.video_name}_config.json"
+        calib_path = videos_dir / f"{self.video_name}_calib.json"
+        objects_path = videos_dir / f"{self.video_name}_objects.json"
+        
+        try:
+            if calib_path.exists() and objects_path.exists():
+                # Nouveau format : deux fichiers
+                with open(calib_path, 'r', encoding='utf-8') as f:
+                    calib_data = json.load(f)
+                with open(objects_path, 'r', encoding='utf-8') as f:
+                    objects_data = json.load(f)
+                project_config = {**calib_data, **objects_data}
+            elif config_path.exists():
+                # Ancien format : un seul fichier
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    project_config = json.load(f)
+            else:
+                print(f"   ❌ Configuration non trouvée pour {self.video_name}")
+                return False
+            
+            # Récupérer les annotations initiales
+            initial_annotations = project_config.get('initial_annotations', [])
+            if not initial_annotations:
+                print(f"   ⚠️ Aucune annotation initiale trouvée")
+                return False
+            
+            # Récupérer le FPS de la vidéo directement
+            video_path = videos_dir / f"{self.video_name}.mp4"
+            if not video_path.exists():
+                print(f"   ❌ Vidéo non trouvée: {video_path}")
+                return False
+                
+            cap = cv2.VideoCapture(str(video_path))
+            if not cap.isOpened():
+                print(f"   ❌ Impossible d'ouvrir la vidéo: {video_path}")
+                return False
+                
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            cap.release()
+            
+            if fps <= 0:
+                fps = 25.0  # Valeur par défaut
+            
+            # Calculer l'event_frame et l'intervalle
+            event_frame = int(event_timestamp * fps)
+            offset_before_frames = int((segment_offset_before_seconds or 0.0) * fps)
+            offset_after_frames = int((segment_offset_after_seconds or 0.0) * fps)
+            
+            start_frame = max(0, event_frame - offset_before_frames)
+            end_frame = event_frame + offset_after_frames
+            
+            print(f"   ⚠️ Vérification annotations pour événement:")
+            print(f"   📍 Event frame: {event_frame}")
+            print(f"   📍 Annotations disponibles: {[ann.get('frame', 0) for ann in initial_annotations]}")
+            print(f"   📊 Intervalle événement: frames {start_frame} à {end_frame}")
+            
+            # Vérifier s'il y a au moins une annotation dans l'intervalle
+            for ann in initial_annotations:
+                annotation_frame = ann.get('frame', 0)
+                if start_frame <= annotation_frame <= end_frame:
+                    print(f"   ✅ Annotation valide trouvée: frame {annotation_frame}")
+                    return True
+            
+            print(f"   ❌ Aucune annotation valide dans l'intervalle")
+            return False
+            
+        except Exception as e:
+            print(f"   ❌ Erreur lors de la vérification des annotations: {e}")
+            return False
     
     def display_events_summary(self):
         """Affiche un résumé des événements"""
