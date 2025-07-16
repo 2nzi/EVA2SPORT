@@ -63,6 +63,14 @@ class Config:
         self.event_timestamp_seconds = event_timestamp_seconds
         self.event_frame = None
         
+        # Ajouter un suffixe d'événement si en mode event
+        if self.event_timestamp_seconds is not None:
+            self.event_suffix = f"_event_{int(self.event_timestamp_seconds)}s"
+            self.VIDEO_NAME_WITH_EVENT = f"{video_name}{self.event_suffix}"
+        else:
+            self.event_suffix = ""
+            self.VIDEO_NAME_WITH_EVENT = video_name
+        
         # SAM2
         self.SAM2_MODEL = "sam2.1_hiera_l"
         self.SAM2_CHECKPOINT = "sam2.1_hiera_large.pt"
@@ -86,11 +94,12 @@ class Config:
         self.video_path = self.videos_dir / f"{self.VIDEO_NAME}.mp4"
         self.config_path = self.videos_dir / f"{self.VIDEO_NAME}_config.json"
         
-        # Sortie
-        self.output_dir = self.videos_dir / "outputs" / self.VIDEO_NAME
+        # Sortie - Structure hiérarchique: outputs/VIDEO_NAME/VIDEO_NAME_WITH_EVENT/
+        self.video_output_dir = self.videos_dir / "outputs" / self.VIDEO_NAME
+        self.output_dir = self.video_output_dir / self.VIDEO_NAME_WITH_EVENT
         self.frames_dir = self.output_dir / "frames"
         self.masks_dir = self.output_dir / "masks"
-        self.output_json_path = self.output_dir / f"{self.VIDEO_NAME}_project.json"
+        self.output_json_path = self.output_dir / f"{self.VIDEO_NAME_WITH_EVENT}_project.json"
         
         # Checkpoint
         self.checkpoint_path = self.checkpoints_dir / self.SAM2_CHECKPOINT
@@ -108,6 +117,7 @@ class Config:
     def setup_directories(self):
         """Crée les dossiers nécessaires"""
         self.videos_dir.mkdir(parents=True, exist_ok=True)
+        self.video_output_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.frames_dir.mkdir(exist_ok=True)
         self.masks_dir.mkdir(exist_ok=True)

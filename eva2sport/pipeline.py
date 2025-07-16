@@ -386,9 +386,9 @@ class EVA2SportPipeline:
         else:
             raise RuntimeError(f"Pipeline failed: {results['error']}")
 
-    def _create_final_results(self, export_paths: Dict) -> Dict:
+    def _create_final_results(self, export_paths: Dict[str, str]) -> Dict[str, Any]:
         """Crée la structure des résultats finaux"""
-        return {
+        results = {
             'status': 'success',
             'video_name': self.config.VIDEO_NAME,
             'frames_extracted': self.results.get('extracted_frames', 0),
@@ -403,3 +403,25 @@ class EVA2SportPipeline:
                 'output_dir': str(self.config.output_dir)
             }
         }
+        
+        # Ajouter les informations spécifiques aux événements pour l'index
+        if self.config.is_event_mode:
+            results['event_timestamp'] = self.config.event_timestamp_seconds
+            results['event_frame'] = self.config.event_frame
+        
+        # Ajouter les informations de segment pour l'index
+        if hasattr(self, 'results') and 'reference_frame' in self.results:
+            results['reference_frame'] = self.results['reference_frame']
+            
+            # Calculer les bornes du segment si disponibles
+            if self.config.is_segment_mode or self.config.is_event_mode:
+                try:
+                    start_frame, end_frame, _ = self.config.calculate_segment_bounds_and_anchor(
+                        self.results['reference_frame'], verbose=False
+                    )
+                    results['segment_start_frame'] = start_frame
+                    results['segment_end_frame'] = end_frame
+                except:
+                    pass  # Si le calcul échoue, on continue sans ces infos
+        
+        return results

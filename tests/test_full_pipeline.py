@@ -229,7 +229,6 @@ def test_event_mode_pipeline_multiple_events():
     return all_success
     
 
-
 if __name__ == "__main__":
     print("🧪 TESTS EVA2SPORT PIPELINE")
     print("=" * 50)
@@ -239,9 +238,11 @@ if __name__ == "__main__":
     print("1. Test pipeline mode segment (original)")
     print("2. Test pipeline mode event (nouveau)")
     print("3. Test pipeline mode event (plusieurs events)")
-    print("4. Exécuter les deux tests")
+    print("4. Test gestionnaire d'événements multiples → voir test_multi_event_manager.py")
+    print("5. Test événement unique avec gestionnaire")
+    print("6. Exécuter les deux tests")
     
-    choice = input("\nVotre choix (1, 2, 3 ou 4): ").strip()
+    choice = input("\nVotre choix (1, 2, 3, 4, 5 ou 6): ").strip()
     
     success = True
     
@@ -255,6 +256,17 @@ if __name__ == "__main__":
         print("\n🎯 EXÉCUTION TEST MODE EVENT")
         success = test_event_mode_pipeline_multiple_events()
     elif choice == "4":
+        print("\n🎯 REDIRECTION VERS TEST SPÉCIALISÉ")
+        print("   Pour tester le gestionnaire multi-événements, lancez:")
+        print("   python tests/test_multi_event_manager.py")
+        success = True
+    elif choice == "5":
+        print("\n🎯 EXÉCUTION TEST ÉVÉNEMENT UNIQUE AVEC GESTIONNAIRE")
+        # This test is now handled by test_multi_event_manager.py
+        print("   Pour tester l'événement unique, lancez:")
+        print("   python tests/test_multi_event_manager.py --single-event <timestamp>")
+        success = True
+    elif choice == "6":
         print("\n🎯 EXÉCUTION DES DEUX TESTS")
         print("\n" + "=" * 60)
         print("TEST 1/2: MODE SEGMENT")
