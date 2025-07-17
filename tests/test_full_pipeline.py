@@ -109,16 +109,12 @@ def test_event_mode_pipeline():
         pipeline = EVA2SportPipeline(
             video_name,
             event_timestamp_seconds=event_timestamp,
-            segment_offset_before_seconds=2.0,
-            segment_offset_after_seconds=2.0
+            segment_offset_before_seconds=3.0,
+            segment_offset_after_seconds=3.0
         )
         print(f"   ✅ Pipeline créée pour event à {event_timestamp}s")
         
-        # 2. Afficher la configuration
-        print("1. 📋 Configuration:")
-        pipeline.config.display_config()
-        
-        # 3. Exécution complète avec export vidéo
+        # 2. Exécution complète avec export vidéo
         print("\n3. 🚀 Exécution pipeline complète mode event...")
         print("   ⚡ Cela peut prendre plusieurs minutes...")
 
@@ -179,9 +175,59 @@ def test_event_mode_pipeline():
         import traceback
         traceback.print_exc()
         return False
+
+
+def test_event_mode_pipeline_multiple_events():
+    """Test pipeline mode event pour plusieurs timestamps"""
+    print("🚀 TEST PIPELINE MODE EVENT MULTI-EVENTS")
+    print("=" * 50)
+
+    video_name = "SD_13_06_2025_cam1"
+    event_timestamps = [1029.001, 959.696]
+
+    all_success = True
+
+    for idx, event_timestamp in enumerate(event_timestamps):
+        print(f"\n--- Événement {idx+1} à {event_timestamp}s ---")
+        try:
+            pipeline = EVA2SportPipeline(
+                video_name,
+                event_timestamp_seconds=event_timestamp,
+                segment_offset_before_seconds=5.0,
+                segment_offset_after_seconds=5.0
+            )
+            print(f"   ✅ Pipeline créée pour event à {event_timestamp}s")
+
+            results = pipeline.run_full_pipeline(
+                force_extraction=True,
+                export_video=True,
+                video_params={
+                    'fps': 5,
+                    'show_minimap': True,
+                    'cleanup_frames': True,
+                    'force_regenerate': True
+                }
+            )
+
+            if results['status'] == 'success':
+                print(f"   ✅ Event {idx+1} réussi")
+            else:
+                print(f"   ❌ Event {idx+1} échoué: {results['error']}")
+                all_success = False
+
+        except Exception as e:
+            print(f"   ❌ Exception pour event {idx+1}: {e}")
+            import traceback
+            traceback.print_exc()
+            all_success = False
+
+    print("\n" + "=" * 50)
+    if all_success:
+        print("✅ TEST MULTI-EVENTS RÉUSSI!")
+    else:
+        print("❌ TEST MULTI-EVENTS AVEC ERREURS")
+    return all_success
     
-
-
 
 if __name__ == "__main__":
     print("🧪 TESTS EVA2SPORT PIPELINE")
@@ -191,9 +237,12 @@ if __name__ == "__main__":
     print("Choisissez le test à exécuter:")
     print("1. Test pipeline mode segment (original)")
     print("2. Test pipeline mode event (nouveau)")
-    print("3. Exécuter les deux tests")
+    print("3. Test pipeline mode event (plusieurs events)")
+    print("4. Test gestionnaire d'événements multiples → voir test_multi_event_manager.py")
+    print("5. Test événement unique avec gestionnaire")
+    print("6. Exécuter les deux tests")
     
-    choice = input("\nVotre choix (1, 2 ou 3): ").strip()
+    choice = input("\nVotre choix (1, 2, 3, 4, 5 ou 6): ").strip()
     
     success = True
     
@@ -204,6 +253,20 @@ if __name__ == "__main__":
         print("\n🎯 EXÉCUTION TEST MODE EVENT")
         success = test_event_mode_pipeline()
     elif choice == "3":
+        print("\n🎯 EXÉCUTION TEST MODE EVENT")
+        success = test_event_mode_pipeline_multiple_events()
+    elif choice == "4":
+        print("\n🎯 REDIRECTION VERS TEST SPÉCIALISÉ")
+        print("   Pour tester le gestionnaire multi-événements, lancez:")
+        print("   python tests/test_multi_event_manager.py")
+        success = True
+    elif choice == "5":
+        print("\n🎯 EXÉCUTION TEST ÉVÉNEMENT UNIQUE AVEC GESTIONNAIRE")
+        # This test is now handled by test_multi_event_manager.py
+        print("   Pour tester l'événement unique, lancez:")
+        print("   python tests/test_multi_event_manager.py --single-event <timestamp>")
+        success = True
+    elif choice == "6":
         print("\n🎯 EXÉCUTION DES DEUX TESTS")
         print("\n" + "=" * 60)
         print("TEST 1/2: MODE SEGMENT")

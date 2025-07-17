@@ -12,6 +12,7 @@ Usage avancé:
 
 from .pipeline import EVA2SportPipeline
 from .config import Config
+from .export.multi_event_manager import MultiEventManager
 from typing import Optional
 
 def create_pipeline(video_name: str, working_dir: str = None,
