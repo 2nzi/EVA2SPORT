@@ -72,6 +72,7 @@ SAM_inference_NoNZeroFrameInput.ipynb
 
 *.txt
 *.png
+*.csv
 
 requirements.txt
 uv.lock
