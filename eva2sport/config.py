@@ -4,7 +4,7 @@ Environnement local/production uniquement
 """
 
 from pathlib import Path
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Optional, Tuple, List, Dict, Any, Union
 from dataclasses import dataclass
 import torch
 
@@ -441,3 +441,49 @@ class Config:
         offset_before = self.seconds_to_frames(self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0, fps)
         offset_after = self.seconds_to_frames(self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0, fps)
         return offset_before, offset_after
+    
+    def resolve_data_file_path(self, filename: Union[str, Path]) -> Path:
+        """
+        Résout le chemin d'un fichier de données (CSV, JSON, etc.)
+        
+        Args:
+            filename: Nom du fichier ou chemin
+            
+        Returns:
+            Path résolu du fichier
+        """
+        file_path = Path(filename)
+        
+        # Si c'est juste un nom de fichier (pas un chemin), chercher dans data/videos/
+        if not file_path.is_absolute() and file_path.parent == Path('.'):
+            return self.videos_dir / file_path
+        elif not file_path.is_absolute():
+            # Si c'est un chemin relatif, le résoudre depuis le working_dir
+            return self.working_dir / file_path
+        else:
+            # Chemin absolu, utiliser tel quel
+            return file_path
+    
+    def get_csv_path(self, csv_filename: str) -> Path:
+        """
+        Méthode de commodité pour obtenir le chemin d'un fichier CSV
+        
+        Args:
+            csv_filename: Nom du fichier CSV
+            
+        Returns:
+            Path du fichier CSV dans data/videos/
+        """
+        return self.resolve_data_file_path(csv_filename)
+    
+    def get_json_path(self, json_filename: str) -> Path:
+        """
+        Méthode de commodité pour obtenir le chemin d'un fichier JSON
+        
+        Args:
+            json_filename: Nom du fichier JSON
+            
+        Returns:
+            Path du fichier JSON dans data/videos/
+        """
+        return self.resolve_data_file_path(json_filename)

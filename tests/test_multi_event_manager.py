@@ -12,14 +12,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from eva2sport.export.multi_event_manager import MultiEventManager
 
-
 def test_multi_event_manager_complete():
     """Test complet du gestionnaire d'événements multiples"""
     print("🚀 TEST COMPLET GESTIONNAIRE MULTI-ÉVÉNEMENTS")
     print("=" * 70)
     
     video_name = "SD_13_06_2025_cam1"
-    event_timestamps = [750.381,959.696, 1029.001]  # Réduire pour test plus rapide
+    
+    # Option 1: Utiliser un fichier CSV (nouvelle interface)
+    event_csv_path = "Timeline_g_SD.csv"  # Nom du fichier dans data/videos/
+    
+    # Option 2: Utiliser une liste manuelle pour les tests rapides
+    # event_timestamps = [750.381, 959.696, 1029.001]
     
     try:
         # 1. Créer le gestionnaire
@@ -30,8 +34,15 @@ def test_multi_event_manager_complete():
         
         # 2. Traiter tous les événements
         print("\n2. 🚀 Traitement des événements multiples...")
+        
+        # Option 1: Depuis un fichier CSV avec configuration
         results = manager.process_multiple_events(
-            event_timestamps,
+            csv_file=event_csv_path,
+            csv_config={
+                'timestamp_column': 'Start time',
+                'filter_column': 'Row',
+                'filter_value': 'PdB'
+            },
             segment_offset_before_seconds=5.0,
             segment_offset_after_seconds=5.0,
             video_params={
@@ -41,6 +52,19 @@ def test_multi_event_manager_complete():
                 'force_regenerate': True
             }
         )
+        
+        # Option 2: Depuis une liste manuelle (pour tests rapides)
+        # results = manager.process_multiple_events(
+        #     event_timestamps=event_timestamps,
+        #     segment_offset_before_seconds=5.0,
+        #     segment_offset_after_seconds=5.0,
+        #     video_params={
+        #         'fps': 5,
+        #         'show_minimap': True,
+        #         'cleanup_frames': True,
+        #         'force_regenerate': True
+        #     }
+        # )
         
         # 3. Vérifier les résultats
         print("\n3. ✅ VÉRIFICATION DES RÉSULTATS")
@@ -318,58 +342,60 @@ def test_index_persistence():
 if __name__ == "__main__":
     print("🧪 TESTS GESTIONNAIRE MULTI-ÉVÉNEMENTS EVA2SPORT")
     print("=" * 70)
+
+    test_multi_event_manager_complete()
+
+    # # Menu de choix
+    # print("Choisissez le test à exécuter:")
+    # print("1. Test complet du gestionnaire multi-événements")
+    # print("2. Test workflow événement unique")
+    # print("3. Test persistance de l'index")
+    # print("4. Exécuter tous les tests")
     
-    # Menu de choix
-    print("Choisissez le test à exécuter:")
-    print("1. Test complet du gestionnaire multi-événements")
-    print("2. Test workflow événement unique")
-    print("3. Test persistance de l'index")
-    print("4. Exécuter tous les tests")
+    # choice = input("\nVotre choix (1, 2, 3 ou 4): ").strip()
     
-    choice = input("\nVotre choix (1, 2, 3 ou 4): ").strip()
+    # success = True
     
-    success = True
-    
-    if choice == "1":
-        print("\n🎯 EXÉCUTION TEST COMPLET")
-        success = test_multi_event_manager_complete()
-    elif choice == "2":
-        print("\n🎯 EXÉCUTION TEST ÉVÉNEMENT UNIQUE")
-        success = test_single_event_workflow()
-    elif choice == "3":
-        print("\n🎯 EXÉCUTION TEST PERSISTANCE")
-        success = test_index_persistence()
-    elif choice == "4":
-        print("\n🎯 EXÉCUTION DE TOUS LES TESTS")
-        print("\n" + "=" * 70)
-        print("TEST 1/3: GESTIONNAIRE COMPLET")
-        print("=" * 70)
-        success1 = test_multi_event_manager_complete()
+    # if choice == "1":
+    #     print("\n🎯 EXÉCUTION TEST COMPLET")
+    #     success = test_multi_event_manager_complete()
+    # elif choice == "2":
+    #     print("\n🎯 EXÉCUTION TEST ÉVÉNEMENT UNIQUE")
+    #     success = test_single_event_workflow()
+    # elif choice == "3":
+    #     print("\n🎯 EXÉCUTION TEST PERSISTANCE")
+    #     success = test_index_persistence()
+    # elif choice == "4":
+    #     print("\n🎯 EXÉCUTION DE TOUS LES TESTS")
+    #     print("\n" + "=" * 70)
+    #     print("TEST 1/3: GESTIONNAIRE COMPLET")
+    #     print("=" * 70)
+    #     success1 = test_multi_event_manager_complete()
         
-        print("\n" + "=" * 70)
-        print("TEST 2/3: ÉVÉNEMENT UNIQUE")
-        print("=" * 70)
-        success2 = test_single_event_workflow()
+    #     print("\n" + "=" * 70)
+    #     print("TEST 2/3: ÉVÉNEMENT UNIQUE")
+    #     print("=" * 70)
+    #     success2 = test_single_event_workflow()
         
-        print("\n" + "=" * 70)
-        print("TEST 3/3: PERSISTANCE")
-        print("=" * 70)
-        success3 = test_index_persistence()
+    #     print("\n" + "=" * 70)
+    #     print("TEST 3/3: PERSISTANCE")
+    #     print("=" * 70)
+    #     success3 = test_index_persistence()
         
-        success = success1 and success2 and success3
+    #     success = success1 and success2 and success3
         
-        print("\n" + "=" * 70)
-        print("RÉSUMÉ DES TESTS")
-        print("=" * 70)
-        print(f"Gestionnaire complet: {'✅ RÉUSSI' if success1 else '❌ ÉCHOUÉ'}")
-        print(f"Événement unique: {'✅ RÉUSSI' if success2 else '❌ ÉCHOUÉ'}")
-        print(f"Persistance: {'✅ RÉUSSI' if success3 else '❌ ÉCHOUÉ'}")
-    else:
-        print("❌ Choix invalide. Utilisation du test complet par défaut")
-        success = test_multi_event_manager_complete()
+    #     print("\n" + "=" * 70)
+    #     print("RÉSUMÉ DES TESTS")
+    #     print("=" * 70)
+    #     print(f"Gestionnaire complet: {'✅ RÉUSSI' if success1 else '❌ ÉCHOUÉ'}")
+    #     print(f"Événement unique: {'✅ RÉUSSI' if success2 else '❌ ÉCHOUÉ'}")
+    #     print(f"Persistance: {'✅ RÉUSSI' if success3 else '❌ ÉCHOUÉ'}")
+    # else:
+    #     print("❌ Choix invalide. Utilisation du test complet par défaut")
+    #     success = test_multi_event_manager_complete()
     
-    if success:
-        print("\n🎯 TOUS LES TESTS RÉUSSIS!")
-    else:
-        print("\n❌ ÉCHEC DES TESTS")
-        sys.exit(1) 
+    # if success:
+    #     print("\n🎯 TOUS LES TESTS RÉUSSIS!")
+    # else:
+    #     print("\n❌ ÉCHEC DES TESTS")
+    #     sys.exit(1) 

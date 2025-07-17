@@ -5,11 +5,12 @@ Gère l'index global et les fichiers séparés par événement
 
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 from datetime import datetime
 
 from ..config import Config
 from ..pipeline import EVA2SportPipeline
+from ..utils import TimestampReader
 
 
 class MultiEventManager:
@@ -31,6 +32,11 @@ class MultiEventManager:
         self.base_output_dir = self.videos_dir / "outputs"
         self.video_output_dir = self.base_output_dir / video_name
         self.index_file = self.video_output_dir / f"{video_name}_events_index.json"
+        
+        # Utilitaires - Créer avec une config temporaire pour la résolution des chemins
+        from ..config import Config
+        temp_config = Config(video_name, working_dir, create_directories=False)
+        self.timestamp_reader = TimestampReader(temp_config)
         
         # État
         self.events_index = self._load_or_create_index()
@@ -160,30 +166,52 @@ class MultiEventManager:
             print(f"   ❌ Erreur lors du traitement de l'événement {event_id}: {e}")
             return None
     
-    def process_multiple_events(self, event_timestamps: List[float], 
+    def process_multiple_events(self, event_timestamps: Optional[List[float]] = None,
+                               csv_file: Optional[Union[str, Path]] = None,
+                               json_file: Optional[Union[str, Path]] = None,
+                               csv_config: Optional[Dict[str, str]] = None,
+                               validate_timestamps: bool = True,
                                **kwargs) -> Dict[str, Any]:
         """
-        Traite plusieurs événements
+        Traite plusieurs événements depuis différentes sources
         
         Args:
-            event_timestamps: Liste des timestamps d'événements
+            event_timestamps: Liste manuelle des timestamps d'événements
+            csv_file: Fichier CSV contenant les timestamps
+            json_file: Fichier JSON contenant les timestamps
+            csv_config: Configuration pour la lecture CSV (timestamp_column, filter_column, filter_value)
+            validate_timestamps: Valider les timestamps contre la durée de la vidéo
             **kwargs: Paramètres communs pour tous les événements
             
         Returns:
             Résumé du traitement de tous les événements
         """
-        print(f"🚀 TRAITEMENT DE {len(event_timestamps)} ÉVÉNEMENTS")
+        # Récupérer les timestamps depuis la source appropriée
+        timestamps = self._get_timestamps_from_source(
+            event_timestamps, csv_file, json_file, csv_config, validate_timestamps
+        )
+        
+        if not timestamps:
+            print("❌ Aucun timestamp à traiter")
+            return {
+                "total_events": 0,
+                "successful_events": 0,
+                "failed_events": 0,
+                "events_details": []
+            }
+        
+        print(f"🚀 TRAITEMENT DE {len(timestamps)} ÉVÉNEMENTS")
         print("=" * 60)
         
         results = {
-            "total_events": len(event_timestamps),
+            "total_events": len(timestamps),
             "successful_events": 0,
             "failed_events": 0,
             "events_details": []
         }
         
-        for i, timestamp in enumerate(event_timestamps):
-            print(f"\n--- Événement {i+1}/{len(event_timestamps)} ---")
+        for i, timestamp in enumerate(timestamps):
+            print(f"\n--- Événement {i+1}/{len(timestamps)} ---")
             
             event_result = self.add_event(timestamp, **kwargs)
             
@@ -252,10 +280,11 @@ class MultiEventManager:
         import cv2
         
         # Charger la configuration du projet directement
-        videos_dir = self.working_dir / "data" / "videos"
-        config_path = videos_dir / f"{self.video_name}_config.json"
-        calib_path = videos_dir / f"{self.video_name}_calib.json"
-        objects_path = videos_dir / f"{self.video_name}_objects.json"
+        # Utiliser la config temporaire du timestamp_reader pour la résolution des chemins
+        temp_config = self.timestamp_reader.config
+        config_path = temp_config.config_path
+        calib_path = temp_config.videos_dir / f"{self.video_name}_calib.json"
+        objects_path = temp_config.videos_dir / f"{self.video_name}_objects.json"
         
         try:
             if calib_path.exists() and objects_path.exists():
@@ -280,7 +309,7 @@ class MultiEventManager:
                 return False
             
             # Récupérer le FPS de la vidéo directement
-            video_path = videos_dir / f"{self.video_name}.mp4"
+            video_path = temp_config.video_path
             if not video_path.exists():
                 print(f"   ❌ Vidéo non trouvée: {video_path}")
                 return False
@@ -322,6 +351,117 @@ class MultiEventManager:
         except Exception as e:
             print(f"   ❌ Erreur lors de la vérification des annotations: {e}")
             return False
+    
+    def _get_timestamps_from_source(self, event_timestamps: Optional[List[float]] = None,
+                                   csv_file: Optional[Union[str, Path]] = None,
+                                   json_file: Optional[Union[str, Path]] = None,
+                                   csv_config: Optional[Dict[str, str]] = None,
+                                   validate_timestamps: bool = True) -> List[float]:
+        """
+        Récupère les timestamps depuis différentes sources
+        
+        Args:
+            event_timestamps: Liste manuelle des timestamps
+            csv_file: Fichier CSV contenant les timestamps
+            json_file: Fichier JSON contenant les timestamps
+            csv_config: Configuration pour la lecture CSV
+            validate_timestamps: Valider les timestamps contre la durée de la vidéo
+            
+        Returns:
+            Liste des timestamps à traiter
+        """
+        timestamps = []
+        
+        # Priorité 1: Liste manuelle
+        if event_timestamps:
+            print("📋 Utilisation de la liste manuelle de timestamps")
+            timestamps = list(event_timestamps)
+        
+        # Priorité 2: Fichier CSV
+        elif csv_file:
+            print("📊 Lecture des timestamps depuis un fichier CSV")
+            
+            # Configuration par défaut pour CSV
+            csv_config = csv_config or {}
+            timestamp_column = csv_config.get('timestamp_column', 'Start time')
+            filter_column = csv_config.get('filter_column')
+            filter_value = csv_config.get('filter_value')
+            
+            try:
+                timestamps = self.timestamp_reader.read_from_csv(
+                    csv_file=csv_file,
+                    timestamp_column=timestamp_column,
+                    filter_column=filter_column,
+                    filter_value=filter_value
+                )
+            except Exception as e:
+                print(f"❌ Erreur lors de la lecture du CSV: {e}")
+                return []
+        
+        # Priorité 3: Fichier JSON
+        elif json_file:
+            print("📄 Lecture des timestamps depuis un fichier JSON")
+            
+            try:
+                timestamps = self.timestamp_reader.read_from_json(json_file)
+            except Exception as e:
+                print(f"❌ Erreur lors de la lecture du JSON: {e}")
+                return []
+        
+        else:
+            print("❌ Aucune source de timestamps fournie")
+            return []
+        
+        # Validation des timestamps si demandée
+        if validate_timestamps and timestamps:
+            print("✅ Validation des timestamps contre la durée de la vidéo")
+            timestamps = self.timestamp_reader.validate_timestamps(
+                timestamps, self.video_name
+            )
+        
+        return timestamps
+    
+    def process_events_from_csv(self, csv_file: Union[str, Path],
+                               timestamp_column: str = 'Start time',
+                               filter_column: Optional[str] = None,
+                               filter_value: Optional[str] = None,
+                               **kwargs) -> Dict[str, Any]:
+        """
+        Méthode de commodité pour traiter les événements depuis un CSV
+        
+        Args:
+            csv_file: Fichier CSV contenant les timestamps
+            timestamp_column: Nom de la colonne contenant les timestamps
+            filter_column: Colonne à utiliser pour filtrer les lignes
+            filter_value: Valeur à rechercher pour filtrer
+            **kwargs: Paramètres communs pour tous les événements
+            
+        Returns:
+            Résumé du traitement de tous les événements
+        """
+        csv_config = {
+            'timestamp_column': timestamp_column,
+            'filter_column': filter_column,
+            'filter_value': filter_value
+        }
+        
+        return self.process_multiple_events(
+            csv_file=csv_file,
+            csv_config=csv_config,
+            **kwargs
+        )
+    
+    def get_csv_info(self, csv_file: Union[str, Path]) -> Dict[str, Any]:
+        """
+        Récupère les informations sur un fichier CSV
+        
+        Args:
+            csv_file: Chemin vers le fichier CSV
+            
+        Returns:
+            Informations sur le CSV
+        """
+        return self.timestamp_reader.get_csv_info(csv_file)
     
     def display_events_summary(self):
         """Affiche un résumé des événements"""
