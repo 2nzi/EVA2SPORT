@@ -159,11 +159,26 @@ class MultiEventManager:
                 print(f"   ✅ Événement {event_id} traité avec succès")
                 return event_info
             else:
-                print(f"   ❌ Échec du traitement de l'événement {event_id}: {results['error']}")
+                error_msg = results.get('error', 'Erreur inconnue')
+                print(f"   ❌ Échec du traitement de l'événement {event_id}: {error_msg}")
+                
+                # Afficher les détails de l'erreur si disponibles
+                if 'error_details' in results and results['error_details']:
+                    print(f"   💥 Détails de l'erreur:")
+                    for line in results['error_details'].split('\n'):
+                        if line.strip():
+                            print(f"      {line}")
+                
                 return None
                 
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
             print(f"   ❌ Erreur lors du traitement de l'événement {event_id}: {e}")
+            print(f"   💥 Détails de l'erreur:")
+            for line in error_details.split('\n'):
+                if line.strip():
+                    print(f"      {line}")
             return None
     
     def process_multiple_events(self, event_timestamps: Optional[List[float]] = None,

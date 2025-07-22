@@ -326,26 +326,33 @@ class EVA2SportPipeline:
         
         try:
             # Étape 1: Charger la configuration
+            print("🔄 Étape 1/7: Chargement de la configuration...")
             self.load_project_config()
             
             # Étape 2: Extraire les frames
+            print("🔄 Étape 2/7: Extraction des frames...")
             self.extract_frames(force=force_extraction)
             
             # Étape 3: Initialiser le tracking
+            print("🔄 Étape 3/7: Initialisation du tracking...")
             self.initialize_tracking()
             
             # Étape 4: Propagation du tracking
+            print("🔄 Étape 4/7: Propagation du tracking...")
             self.run_tracking_propagation()
             
             # Étape 5: Enrichissement
+            print("🔄 Étape 5/7: Enrichissement des annotations...")
             self.enrich_annotations()
             
             # Étape 6: Export
+            print("🔄 Étape 6/7: Export des résultats...")
             export_paths = self.export_results(include_visualization)
             
             # Étape 7: Export vidéo optionnel
             if export_video:
                 try:
+                    print("🔄 Étape 7/7: Export vidéo...")
                     video_params = video_params or {}
                     video_path = self.export_video(**video_params)
                     export_paths['video'] = video_path
@@ -363,12 +370,17 @@ class EVA2SportPipeline:
             return final_results
             
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
             error_result = {
                 'status': 'error',
                 'error': str(e),
+                'error_details': error_details,
                 'video_name': self.config.VIDEO_NAME
             }
             print(f"❌ Erreur dans la pipeline: {e}")
+            print(f"💥 Détails de l'erreur:")
+            print(error_details)
             return error_result
     
     def run_simple(self, force_extraction: bool = False) -> str:
