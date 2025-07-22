@@ -23,7 +23,7 @@ def test_multi_event_manager_complete():
     event_csv_path = "Timeline_g_SD.csv"  # Nom du fichier dans data/videos/
     
     # Option 2: Utiliser une liste manuelle pour les tests rapides
-    # event_timestamps = [750.381, 959.696, 1029.001]
+    event_timestamps = [750.381, 959.696, 1029.001]
     
     try:
         # 1. Créer le gestionnaire
