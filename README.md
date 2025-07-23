@@ -48,8 +48,8 @@ cd EVA2SPORT
 
 | Votre situation | Mode recommandé | Avantages |
 |-----------------|-----------------|-----------|
-| 🖥️ **Pas de GPU puissant** <br/> *(GPU intégré, ancien GPU, ou CPU uniquement)* | 🌐 **Google Colab** | GPU gratuit A100, installation automatique, simplicité |
-| 💪 **GPU puissant disponible** <br/> *(RTX 3070+, RTX 4060+, ou équivalent)* | 💻 **Pipeline locale** | Performance maximale, contrôle total, pas de limite de temps |
+| 🖥️ **Pas de GPU puissant** <br/> *(GPU intégré, ancien GPU, ou CPU uniquement)* | 🌐 **Google Colab** | GPU A100, installation automatique, simplicité |
+| 💪 **GPU puissant disponible** <br/> *(RTX 3070+, RTX 4060+ idéalement)* | 💻 **Pipeline locale** | Performance maximale, contrôle total, pas de limite de temps |
 
 ### 🚀 **Installation selon votre choix**
 
@@ -57,7 +57,7 @@ cd EVA2SPORT
 
 **Aucune installation nécessaire !** 
 - Utilisez directement : **[SAM_EVA2PERF_COLAB.ipynb](notebook/SAM_EVA2PERF_COLAB.ipynb)**
-- GPU A100 gratuit fourni par Google
+- GPU (à louer) fourni par Google : 100 crédit = 10€ | L4 ~ 2 credit/h | A100 ~ 7 credit/h
 - Installation automatique de toutes les dépendances
 
 #### 💻 **Mode Pipeline locale (GPU puissant)**
@@ -119,32 +119,14 @@ uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {tor
 
 ```powershell
 # Mode événement unique
-uv run python examples/event_processing.py
+python examples/event_processing.py
 
 # Mode pipeline complète
-uv run python tests/test_full_pipeline.py
+python tests/test_full_pipeline.py
 
 # Mode multi-événements 
-uv run python tests/test_multi_event_manager.py
+python tests/test_multi_event_manager.py
 ```
-
-**📖 Documentation complète :** [Guide pipeline locale](examples/README.md)
-
-#### 📔 **Mode C : Notebooks locaux (utilisateurs avancés)**
-
-Si vous préférez les notebooks en local avec votre GPU :
-
-```powershell
-# Démarrer Jupyter Lab
-uv run jupyter lab
-```
-
-**Notebooks disponibles :**
-- `SAM_inference.ipynb` - Traitement principal SAM2
-- `SAM_viz.ipynb` - Visualisation des résultats
-- `SAM_inference_segment.ipynb` - Segmentation vidéo avancée
-
-**📖 Guide détaillé :** [Guide des notebooks](notebook/README.md)
 
 ### 📊 **Étape 3 : Récupérez vos résultats**
 
@@ -209,11 +191,6 @@ watch -n 1 nvidia-smi
 - 🎬 **[Tutoriel complet d'utilisation](docs/DEMO_TRACKING.mp4)**
 - 📊 **[Résultat final en action](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
 
-### 🌟 **Prochaines étapes recommandées**
-
-1. **🎯 Testez rapidement** avec un petit segment sur Google Colab
-2. **📊 Si satisfait**, passez à la pipeline locale pour de meilleures performances  
-3. **🔄 Itérez** : ajustez vos configurations selon les résultats
 
 ---
 
@@ -231,4 +208,3 @@ watch -n 1 nvidia-smi
 
 ---
 
-*EVA2SPORT simplifie l'analyse vidéo sportive avec SAM2. Choisissez votre mode selon votre matériel et commencez en quelques minutes !*
