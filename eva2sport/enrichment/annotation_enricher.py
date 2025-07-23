@@ -5,10 +5,8 @@ Extrait du notebook SAM_inference_segment.ipynb
 
 import uuid
 import base64
-import colorsys
-import random
+from typing import Dict, Any, List, Optional
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -27,103 +25,7 @@ class AnnotationEnricher:
         self.projection_utils = ProjectionUtils()
         self.bbox_calculator = BBoxCalculator()
     
-    def create_project_structure(self, project_config: Dict[str, Any], 
-                               added_objects: List[Dict]) -> Dict[str, Any]:
-        """Crée la structure JSON du projet depuis la configuration"""
-        
-        # Informations vidéo
-        video_info = self._get_video_info()
-        
-        # Frame d'ancrage
-        anchor_frame = self._get_anchor_frame(project_config)
-        
-        # Mapping des frames
-        frame_mapping, processed_frames = self._generate_frame_mapping(
-            video_info['total_frames'], anchor_frame
-        )
-        
-        # Structure des objets avec couleurs
-        objects = self._create_objects_structure(project_config, added_objects)
-        
-        return {
-            "format_version": "1.0",
-            "video": f"{self.config.VIDEO_NAME}.mp4",
-            "metadata": {
-                "project_id": str(uuid.uuid4()),
-                "created_at": datetime.now().isoformat() + "Z",
-                "fps": video_info['fps'],
-                "resolution": {
-                    "width": video_info['width'],
-                    "height": video_info['height'],
-                    "aspect_ratio": round(video_info['width'] / video_info['height'], 2)
-                },
-                "frame_interval": self.config.FRAME_INTERVAL,
-                "frame_count_original": video_info['total_frames'],
-                "frame_count_processed": len(processed_frames),
-                "frame_mapping": frame_mapping,
-                "anchor_frame": anchor_frame,
-                "static_video": False
-            },
-            "calibration": project_config['calibration'],
-            "objects": objects,
-            "initial_annotations": project_config['initial_annotations'],
-            "annotations": {}
-        }
-    
-    def run_bidirectional_propagation(self, predictor, inference_state, 
-                                    project_data: Dict[str, Any],
-                                    project_config: Dict[str, Any]) -> Dict[str, Any]:
-        """Exécute la propagation bidirectionnelle et enrichit les annotations"""
-        
-        print("🔄 Propagation bidirectionnelle avec enrichissement...")
-        
-        # ✅ CORRECTION: Utiliser la méthode corrigée
-        anchor_processed_idx = self._get_anchor_processed_index(project_data, project_config)
-        
-        # En mode segmentation/event, total_frames = extracted_frames_count
-        if self.config.is_segment_mode or self.config.is_event_mode:
-            total_frames = self.config.extracted_frames_count
-        else:
-            total_frames = len([f for f in project_data['metadata']['frame_mapping'] if f is not None])
-        
-        print(f"   📊 Anchor index: {anchor_processed_idx}, Total frames: {total_frames}")
-        
-        # Phase 1: Propagation inverse (anchor → 0)
-        if anchor_processed_idx > 0:
-            print(f"🔄 Phase 1: Propagation inverse (frame {anchor_processed_idx} → 0)")
-            
-            for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(
-                inference_state,
-                start_frame_idx=anchor_processed_idx,
-                max_frame_num_to_track=anchor_processed_idx + 1,
-                reverse=True
-            ):
-                self._process_frame_annotations(
-                    project_data, project_config, out_frame_idx, 
-                    out_obj_ids, out_mask_logits, predictor, inference_state
-                )
-        
-        # Phase 2: Propagation avant (anchor → fin)
-        remaining_frames = total_frames - anchor_processed_idx
-        if remaining_frames > 1:
-            print(f"🔄 Phase 2: Propagation avant (frame {anchor_processed_idx} → {total_frames - 1})")
-            
-            for out_frame_idx, out_obj_ids, out_mask_logits in predictor.propagate_in_video(
-                inference_state,
-                start_frame_idx=anchor_processed_idx,
-                max_frame_num_to_track=remaining_frames,
-                reverse=False
-            ):
-                # Éviter de traiter à nouveau l'anchor frame
-                if out_frame_idx == anchor_processed_idx and str(out_frame_idx) in project_data['annotations']:
-                    continue
-                
-                self._process_frame_annotations(
-                    project_data, project_config, out_frame_idx,
-                    out_obj_ids, out_mask_logits, predictor, inference_state
-                )
-        
-        return project_data
+
     
     def enrich_all_annotations(self, project_data: Dict[str, Any], 
                              project_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -148,87 +50,46 @@ class AnnotationEnricher:
         print(f"✅ {enriched_count} annotations enrichies avec projections terrain")
         return project_data
     
-    def _get_video_info(self) -> Dict[str, Any]:
-        """Récupère les informations de la vidéo (utilise la méthode centralisée)"""
-        return self.config.get_video_info()
-    
-    def _get_anchor_frame(self, project_config: Dict[str, Any]) -> int:
-        """Récupère la frame d'ancrage depuis la configuration"""
-        if not project_config.get('initial_annotations'):
-            return 0
+    def process_propagation_results(self, propagation_results: Dict[str, Any], 
+                                  project_data: Dict[str, Any], 
+                                  project_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Convertit les résultats de propagation SAM2 en annotations enrichies"""
         
-        # Utiliser la méthode centralisée pour sélectionner l'annotation la plus proche
-        reference_frame = self.config.get_closest_initial_annotation_frame(
-            project_config['initial_annotations']
-        )
+        print("🎯 Traitement des résultats de propagation...")
         
-        # Utiliser la méthode centralisée pour calculer les bornes et l'ancrage (sans logs répétés)
-        _, _, anchor_frame_in_segment = self.config.calculate_segment_bounds_and_anchor(reference_frame, verbose=False)
+        # Initialiser les annotations si nécessaire
+        if 'annotations' not in project_data:
+            project_data['annotations'] = {}
         
-        return anchor_frame_in_segment
+        cam_params = project_config['calibration']['camera_parameters']
+        total_processed = 0
+        
+        # Traiter chaque frame de la propagation
+        for frame_idx, frame_results in propagation_results.items():
+            obj_ids = frame_results['obj_ids']
+            mask_logits = frame_results['mask_logits']
             
-    def _generate_frame_mapping(self, total_frames: int, anchor_frame: int) -> Tuple[List[Optional[int]], List[int]]:
-        """Génère le mapping frame_originale → frame_traitée"""
-        frame_mapping = [None] * total_frames
-        processed_frames = set()
-        processed_idx = 0
+            # Initialiser les annotations pour cette frame
+            if str(frame_idx) not in project_data['annotations']:
+                project_data['annotations'][str(frame_idx)] = []
+            
+            # Traiter chaque objet détecté
+            for i, obj_id in enumerate(obj_ids):
+                annotation = self._create_mask_annotation(
+                    obj_id=obj_id,
+                    mask_logits=mask_logits[i],
+                    predictor=None,  # Passé None car nous n'avons pas accès direct ici
+                    inference_state=None,
+                    frame_idx=frame_idx,
+                    cam_params=cam_params
+                )
+                project_data['annotations'][str(frame_idx)].append(annotation)
+                total_processed += 1
         
-        # S'assurer que anchor_frame est incluse
-        if 0 <= anchor_frame * self.config.FRAME_INTERVAL < total_frames:
-            frame_mapping[anchor_frame * self.config.FRAME_INTERVAL] = processed_idx
-            processed_frames.add(anchor_frame * self.config.FRAME_INTERVAL)
-            processed_idx += 1
-        
-        # Ajouter les frames selon l'intervalle
-        for original_idx in range(0, total_frames, self.config.FRAME_INTERVAL):
-            if original_idx not in processed_frames:
-                frame_mapping[original_idx] = processed_idx
-                processed_frames.add(original_idx)
-                processed_idx += 1
-        
-        # Réorganiser par ordre chronologique
-        sorted_frames = sorted(processed_frames)
-        final_mapping = [None] * total_frames
-        
-        for new_idx, original_frame in enumerate(sorted_frames):
-            final_mapping[original_frame] = new_idx
-        
-        return final_mapping, sorted_frames
+        print(f"✅ {total_processed} annotations créées depuis la propagation")
+        return project_data
     
-    def _create_objects_structure(self, project_config: Dict[str, Any], 
-                                added_objects: List[Dict]) -> Dict[str, Dict]:
-        """Crée la structure des objets avec couleurs"""
-        config_objects_mapping = {}
-        for obj in project_config['objects']:
-            config_objects_mapping[obj['obj_id']] = obj
-
-        objects = {}
-        for obj_data in added_objects:
-            obj_id = str(obj_data['obj_id'])
-            obj_type = obj_data['obj_type']
-
-            # Récupérer les informations complètes depuis le config
-            config_obj = config_objects_mapping.get(int(obj_id), {})
-
-            # Couleur aléatoire reproductible
-            random.seed(int(obj_id) * 12345)
-            hue = random.random()
-            rgb = colorsys.hsv_to_rgb(hue, 0.8, 0.9)
-            hex_color = "#{:02x}{:02x}{:02x}".format(
-                int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255)
-            )
-
-            objects[obj_id] = {
-                "id": obj_id,
-                "type": obj_type,
-                "team": config_obj.get('team', None),
-                "jersey_number": config_obj.get('jersey_number', None),
-                "jersey_color": config_obj.get('jersey_color', None),
-                "role": config_obj.get('role', None),
-                "display_color": hex_color
-            }
-
-        return objects
+    # ===== MÉTHODES AUXILIAIRES (SEULEMENT CELLES LIÉES À L'ENRICHISSEMENT) =====
     
     def _get_anchor_processed_index(self, project_data: Dict[str, Any], 
                                   project_config: Dict[str, Any]) -> int:
@@ -337,6 +198,10 @@ class AnnotationEnricher:
     
     def _get_object_score(self, predictor, inference_state, frame_idx: int, obj_id: int) -> Optional[float]:
         """Récupère le score d'objet de manière sûre"""
+        # Vérifier que predictor et inference_state sont disponibles
+        if predictor is None or inference_state is None:
+            return None
+            
         try:
             obj_idx = predictor._obj_id_to_idx(inference_state, obj_id)
             obj_output_dict = inference_state["output_dict_per_obj"][obj_idx]

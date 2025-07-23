@@ -26,8 +26,8 @@ def test_full_pipeline():
         print("1. 🏗️ Création de la pipeline...")
         pipeline = EVA2SportPipeline(
             video_name,
-            segment_offset_before_seconds=5.0,
-            segment_offset_after_seconds=5.0
+            segment_offset_before_seconds=2.0,
+            segment_offset_after_seconds=2.0
         )
         print(f"   ✅ Pipeline créée pour: {video_name}")
         

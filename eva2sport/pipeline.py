@@ -171,18 +171,28 @@ class EVA2SportPipeline:
         if not self.project_config:
             raise ValueError("❌ Configuration projet requise")
         
-        # Utiliser l'enricher pour créer la structure projet et gérer la propagation
-        project_data = self.enricher.create_project_structure(
+        # 1. Créer la structure projet vide
+        project_data = self.exporter.create_project_structure(
             self.project_config, 
             self.results['added_objects']
         )
         
-        # Propagation bidirectionnelle
-        project_data = self.enricher.run_bidirectional_propagation(
-            self.sam2_tracker.predictor,
-            self.sam2_tracker.inference_state,
-            project_data,
-            self.project_config
+        # 2. Calculer les paramètres pour SAM2
+        anchor_frame_idx = self.enricher._get_anchor_processed_index(project_data, self.project_config)
+        
+        if self.config.is_segment_mode or self.config.is_event_mode:
+            total_frames = self.config.extracted_frames_count
+        else:
+            total_frames = len([f for f in project_data['metadata']['frame_mapping'] if f is not None])
+        
+        # 3. SAM2Tracker fait la propagation
+        propagation_results = self.sam2_tracker.run_bidirectional_propagation(
+            anchor_frame_idx, total_frames
+        )
+        
+        # 4. AnnotationEnricher convertit les résultats bruts en annotations enrichies
+        project_data = self.enricher.process_propagation_results(
+            propagation_results, project_data, self.project_config
         )
         
         self.project_data = project_data

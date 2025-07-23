@@ -69,7 +69,8 @@ class SAM2Tracker:
         self.inference_state = self.predictor.init_state(
             video_path=str(self.config.frames_dir),
             offload_video_to_cpu=True,    # Économise la mémoire GPU
-            offload_state_to_cpu=False    # Garde l'état en GPU
+            offload_state_to_cpu=False,    # Garde l'état en GPU
+            # offload_state_to_cpu=True 
         )
         
         # Reset de l'état
@@ -216,42 +217,50 @@ class SAM2Tracker:
 
         return added_objects, all_annotations
     
-    def propagate_tracking(self, verbose: bool = True) -> Dict[str, Any]:
-        """Propage le tracking sur toutes les frames"""
+    def run_bidirectional_propagation(self, anchor_frame: int, total_frames: int) -> Dict[str, Any]:
+        """Exécute la propagation bidirectionnelle SAM2 depuis l'anchor frame"""
         if self.predictor is None or self.inference_state is None:
             raise ValueError("❌ SAM2 non initialisé")
         
-        if verbose:
-            print("🔄 Propagation du tracking...")
+        print("🔄 Propagation bidirectionnelle SAM2...")
+        print(f"   📊 Anchor index: {anchor_frame}, Total frames: {total_frames}")
         
-        # Propagation sur toutes les frames
-        video_segments = {}
-        for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(self.inference_state):
-            video_segments[out_frame_idx] = {
-                'obj_ids': out_obj_ids,
-                'mask_logits': out_mask_logits
-            }
+        propagation_results = {}
         
-        if verbose:
-            print(f"✅ Tracking propagé sur {len(video_segments)} frames")
+        # Phase 1: Propagation inverse (anchor → 0)
+        if anchor_frame > 0:
+            print(f"🔄 Phase 1: Propagation inverse (frame {anchor_frame} → 0)")
+            
+            for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(
+                self.inference_state,
+                start_frame_idx=anchor_frame,
+                max_frame_num_to_track=anchor_frame + 1,
+                reverse=True
+            ):
+                propagation_results[out_frame_idx] = {
+                    'obj_ids': out_obj_ids,
+                    'mask_logits': out_mask_logits
+                }
         
-        return video_segments
-    
-    def initialize_full_pipeline(self, project_config: Dict[str, Any], 
-                                segment_info: Optional[Dict] = None, 
-                                verbose: bool = True) -> Tuple[List[Dict], List[Dict], Dict[str, Any]]:
-        """Initialise complètement SAM2 et ajoute les annotations"""
+        # Phase 2: Propagation avant (anchor → fin)
+        remaining_frames = total_frames - anchor_frame
+        if remaining_frames > 1:
+            print(f"🔄 Phase 2: Propagation avant (frame {anchor_frame} → {total_frames - 1})")
+            
+            for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(
+                self.inference_state,
+                start_frame_idx=anchor_frame,
+                max_frame_num_to_track=remaining_frames,
+                reverse=False
+            ):
+                # Éviter de traiter à nouveau l'anchor frame
+                if out_frame_idx == anchor_frame and out_frame_idx in propagation_results:
+                    continue
+                
+                propagation_results[out_frame_idx] = {
+                    'obj_ids': out_obj_ids,
+                    'mask_logits': out_mask_logits
+                }
         
-        # Initialisation SAM2
-        self.initialize_predictor(verbose=verbose)
-        self.initialize_inference_state(verbose=verbose)
-        
-        # Ajout des annotations initiales
-        added_objects, initial_annotations = self.add_initial_annotations(
-            project_config, segment_info
-        )
-        
-        # Propagation du tracking
-        video_segments = self.propagate_tracking(verbose=verbose)
-        
-        return added_objects, initial_annotations, video_segments
+        print(f"✅ Propagation terminée: {len(propagation_results)} frames")
+        return propagation_results
