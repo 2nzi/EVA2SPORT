@@ -11,7 +11,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from eva2sport.export.multi_event_manager import MultiEventManager
-from eva2sport.utils import TimestampReader
 
 
 def csv_processing():
