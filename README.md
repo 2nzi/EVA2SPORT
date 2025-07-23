@@ -4,6 +4,10 @@
 [![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/pytorch-2.5+-orange)](https://pytorch.org)
 
+<br>
+<br>
+
+
 ## 🎬 Résultat en action
 
 Découvrez EVA2SPORT en action avec cette démonstration de segmentation en temps réel :
@@ -11,6 +15,9 @@ Découvrez EVA2SPORT en action avec cette démonstration de segmentation en temp
 📥 **[Télécharger la vidéo de démonstration](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
 
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
+
+<br>
+<br>
 
 ---
 
@@ -41,6 +48,8 @@ cd EVA2SPORT
 ```
 
 ---
+<br>
+<br>
 
 ## 🎯 Recommandations d'utilisation
 
@@ -80,6 +89,10 @@ uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {tor
 *⏱️ Temps d'installation : 5-15 minutes selon votre connexion*
 
 ---
+
+<br>
+<br>
+
 
 ## 📊 Workflow Complet - 3 Étapes
 
@@ -139,6 +152,11 @@ python tests/test_multi_event_manager.py
 ```
 
 ---
+
+<br>
+<br>
+<br>
+
 
 ## 🔧 Aide et Troubleshooting
 
