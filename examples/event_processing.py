@@ -14,7 +14,7 @@ from eva2sport.export.multi_event_manager import MultiEventManager
 from eva2sport.utils import TimestampReader
 
 
-def example_csv_processing():
+def csv_processing():
     """Exemple de traitement depuis un fichier CSV"""
     print("🚀 EXEMPLE: TRAITEMENT DEPUIS UN FICHIER CSV")
     print("=" * 60)
@@ -62,7 +62,7 @@ def example_csv_processing():
     print(f"\n✅ Résultats: {results['successful_events']}/{results['total_events']} événements traités")
 
 
-def example_manual_processing():
+def manual_processing():
     """Exemple de traitement depuis une liste manuelle"""
     print("\n🚀 EXEMPLE: TRAITEMENT DEPUIS UNE LISTE MANUELLE")
     print("=" * 60)
@@ -102,12 +102,12 @@ if __name__ == "__main__":
     choice = input("\nVotre choix (1-2): ").strip()
     
     if choice == "1":
-        example_csv_processing()
+        csv_processing()
     elif choice == "2":
-        example_manual_processing()
+        manual_processing()
 
     else:
         print("❌ Choix invalide")
         sys.exit(1)
     
-    print("\n�� Exemple terminé!") 
+    print("\n Exemple terminé!") 
