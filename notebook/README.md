@@ -1,208 +1,227 @@
 # 📔 Guide des Notebooks - EVA2SPORT
 
+## 🎯 Recommandations d'utilisation
+
+| Environnement | Utilisation recommandée | Avantages |
+|---------------|-------------------------|-----------|
+| 🌐 **Google Colab** | ✅ **Notebooks (recommandé)** | Installation automatique, GPU à louer facilement accessible |
+| 💻 **Local** | ⚙️ **Pipeline Python** | Performance optimale, contrôle total |
+
+> 💡 **Pour usage local**, nous recommandons plutôt la **pipeline Python** avec les scripts dans `/examples/` ou `/tests/`. Les notebooks sont principalement optimisés pour Google Colab.
+
 ## 🎬 Tutoriel vidéo
 
-Suivez cette démonstration complète de l'utilisation des notebooks :
+Suivez cette démonstration complète de l'utilisation des notebooks : 'new_url'
 
-https://github.com/user-attachments/assets/DEMO_TRACKING.mp4
 
-Ce guide explique comment utiliser EVA2SPORT via les notebooks Jupyter, en mode local ou Google Colab.
+---
 
 ## 📋 Prérequis
 
+### 🆕 **Nouvelle configuration** : 2 fichiers séparés
+
+**Ancien système** (dépréciée) :
+- ❌ `nom_video_config.json` (fichier unique)
+
+**Nouveau système** (recommandé) :
+- ✅ `nom_video_calib.json` (calibration caméra)
+- ✅ `nom_video_objects.json` (annotations d'objets)
+
+### 📁 Fichiers requis
+
 Avant de commencer, assurez-vous d'avoir :
-- ✅ **Configuration vidéo complète** : [Guide de configuration](../data/README.md)
-- ✅ **Fichiers requis** : `nom_video.mp4` + `nom_video_config.json`
-
-## 🎯 Vue d'ensemble des notebooks
-
-| Notebook | Rôle | Utilisation |
-|----------|------|-------------|
-| `SAM_inference.ipynb` | 🚀 **Traitement principal** | Segmentation SAM2 + génération results |
-| `SAM_viz.ipynb` | 📊 **Visualisation** | Analyse et visualisation des résultats |
-
-### 🔄 Workflow complet
 ```
-📄 config.json → 🚀 SAM_inference → 📊 project.json → 📈 SAM_viz → 🎥 vidéo annotée
+📁 Votre dossier de travail/
+├── 🎥 nom_video.mp4                    # Vidéo source
+├── 📊 nom_video_calib.json             # 🆕 Configuration caméra
+└── 🎯 nom_video_objects.json           # 🆕 Annotations objets
+```
+
+**Exemple de nom de fichiers :**
+```
+📁 /content/data/videos/
+├── 🎥 SD_13_06_2025_cam1.mp4
+├── 📊 SD_13_06_2025_cam1_calib.json
+├── 🎯 SD_13_06_2025_cam1_objects.json
+└── Timeline_g_SD.csv (optionel)
+```
+
+> 📚 **Guide de configuration détaillée** : [Configuration des fichiers](../data/README.md)
+
+---
+
+## 🌐 Mode recommandé : Google Colab
+
+### 🚀 **Notebook principal : SAM_EVA2PERF_COLAB.ipynb**
+
+Ce notebook utilise directement la **librairie EVA2Sport** pour une utilisation simplifiée !
+
+#### ✨ **Fonctionnalités principales**
+
+| Cas d'usage | Description | Temps de traitement |
+|-------------|-------------|-------------------|
+| 🎯 **Segment spécifique** | Traite un événement précis | ⚡ 2-5 minutes |
+| 🎬 **Vidéo complète** | Analyse toute la vidéo | ⏳ 10-30 minutes |
+| 📊 **Multi-événements CSV** | Traite plusieurs événements depuis un fichier CSV | ⏱️ Variable |
+
+#### 🛠️ **Installation automatique**
+
+Le notebook installe automatiquement :
+```python
+# Cellule 1: Installation des dépendances
+!pip install git+https://github.com/2nzi/EVA2SPORT.git@dev-pipeline-eva2sport
+!pip install git+https://github.com/facebookresearch/sam2.git
+!pip install opencv-python torch
+```
+
+#### ⚙️ **Configuration simplifiée**
+
+```python
+# Cellule 3: Configuration globale - MODIFIEZ SELON VOS BESOINS
+VIDEO_NAME = "SD_13_06_2025_cam1"  # ⚠️ Nom de base de votre vidéo
+WORKING_DIR = "/content"
+
+# ✅ Le notebook détecte automatiquement :
+# - SD_13_06_2025_cam1.mp4
+# - SD_13_06_2025_cam1_calib.json  
+# - SD_13_06_2025_cam1_objects.json
+```
+
+#### 🚀 **Utilisation**
+
+1. **📁 Upload vos fichiers** dans `/content/data/videos/`
+2. **⚙️ Modifiez** `VIDEO_NAME` dans la cellule 3
+3. **▶️ Exécutez** les cellules selon votre cas d'usage
+4. **💾 Récupérez** les résultats depuis Google Drive (dernière cellule)
+
+### 🎯 **Cas d'usage détaillés**
+
+#### **🎯 Cas 1 : Segment spécifique**
+```python
+# Cellule 5: Configuration du segment
+EVENT_TIMESTAMP = 959  # secondes ⚠️ MODIFIEZ SELON VOTRE ÉVÉNEMENT
+OFFSET_BEFORE = 10.0   # secondes avant l'événement
+OFFSET_AFTER = 5.0     # secondes après l'événement
+
+# Résultat : Vidéo annotée du segment 949s-964s
+```
+
+#### **🎬 Cas 2 : Vidéo complète**
+```python
+# Cellule 6: Traitement complet
+PROCESS_FULL_VIDEO = True  # ⚠️ Changez en True pour activer
+
+# Résultat : Toute la vidéo annotée
+```
+
+#### **📊 Cas 3 : Multi-événements CSV**
+```python
+# Cellule 7: Traitement depuis CSV
+CSV_FILE = "Timeline_g_SD.csv"
+timestamp_column = 'Start time'    # ⚠️ Nom de votre colonne
+filter_column = 'Row'              # ⚠️ Colonne de filtrage  
+filter_value = 'PdB'               # ⚠️ Valeur à filtrer
+
+# Résultat : Plusieurs vidéos annotées selon le CSV
 ```
 
 ---
 
-## 💻 Mode 1 : Notebook Local
+## 💻 Usage local (optionnel)
 
-### 🛠️ Installation préalable
+### ⚠️ **Recommandation importante**
+
+Pour un **usage local**, nous recommandons plutôt d'utiliser la **pipeline Python** :
+
 ```powershell
-# Depuis la racine du projet
-.\install.ps1
-```
-
-### 🚀 Lancement
-```powershell
-# Démarrer Jupyter Lab
-uv run jupyter lab
-
-# Ou dans votre IDE préféré (VS Code, Cursor...)
-```
-
-### 📝 Utilisation de SAM_inference.ipynb
-
-#### 1. **Configuration du projet**
-```python
-# 📋 CONFIGURATION PRINCIPALE - Modifiez ces valeurs
-VIDEO_NAME = "votre_video"              # ⚠️ Nom sans extension
-VIDEOS_DIR = "../videos"           # 📁 Chemin des vidéos
-FRAME_INTERVAL = 3                      # 🎬 Intervalle extraction (1=toutes, 3=1 sur 3)
-```
-
-#### 2. **Options d'extraction**
-```python
-EXTRACT_FRAMES = True                   # ✅ Extraire les frames
-FORCE_EXTRACTION = False                # 🔄 Forcer même si frames existent
+# Scripts recommandés pour usage local
+.\examples\event_processing.py      # 🚀 Script principal
+.\tests\test_full_pipeline.py       # 🧪 Tests complets
+.\tests\test_multi_event_manager.py # 📊 Tests multi-événements
 ```
 
 
-### 📊 Utilisation de SAM_viz.ipynb
+### 🛠️ **Si vous voulez quand même utiliser les notebooks en local**
 
-#### 1. **Configuration**
-Utilisez les **mêmes paramètres** que SAM_inference :
-```python
-VIDEO_NAME = "votre_video"              # ⚠️ Identique à SAM_inference
-VIDEOS_DIR = "../data/videos"           # 📁 Même chemin
-```
 
-#### 2. **Fonctionnalités disponibles**
-- 🎥 **Visualisation frame par frame**
-- 🎭 **Affichage des masques** de segmentation  
-- 📊 **Statistiques** par objet/équipe
-- 🎨 **Génération vidéo annotée** finale
+#### Notebooks disponibles (mode local - old version)
+
+https://github.com/2nzi/EVA2SPORT/blob/main/docs/DEMO_TRACKING.mp4
+
+- `SAM_inference.ipynb` - Traitement principal SAM2
+- `SAM_viz.ipynb` - Visualisation des résultats
+- `SAM_inference_segment.ipynb` - Segmentation vidéo avancée
 
 ---
 
-## ☁️ Mode 2 : Google Colab
+## 🔄 Migration depuis l'ancienne version
 
-Parfait pour tester sans installation locale !
+### 🔄 **Comment migrer vos fichiers**
 
-### 🚀 Configuration Colab - SAM_inference
+Si vous avez encore l'ancien fichier `nom_video_config.json` :
 
-#### 1. **Upload dans Colab**
-```python
-# Uploadez SAM_inference.ipynb dans Colab
-# Créez un dossier 'videos' dans Colab
-```
+1. **📄 Séparez** votre configuration en 2 fichiers
+2. **✂️ Extrayez** la section `calibration` → `nom_video_calib.json`
+3. **✂️ Extrayez** la section `objects` → `nom_video_objects.json`
 
-#### 2. **Modification obligatoire**
-```python
-using_colab = True                      # ⚠️ CHANGEZ À True
-VIDEO_NAME = "votre_video"
-VIDEOS_DIR = "./data/videos"                 # 📁 Chemin Colab
-```
+**Exemple de migration :**
 
-#### 3. **Upload de vos fichiers**
-Dans Colab, uploadez dans `/content/videos/` :
-- `votre_video.mp4`
-- `votre_video_config.json`
-
-#### 4. **Installation automatique**
-La première cellule installe automatiquement :
-- ✅ SAM2 + dépendances
-- ✅ Modèle SAM2
-- ✅ Configuration CUDA
-
-### 📊 Configuration Colab - SAM_viz
-
-#### 1. **Option A : Zip depuis Drive**
-```python
-# Le notebook peut restaurer depuis un zip Google Drive
-zip_path = f'/content/drive/MyDrive/{VIDEO_NAME}.zip'
-```
-
-#### 2. **Option B : Upload direct**
-Uploadez tous les fichiers de résultats dans `/content/videos/outputs/`
-
-
----
-
-## 🎯 Configuration Détaillée
-
-### 📹 Paramètres Vidéo
-
-```python
-# Ajustez selon vos besoins
-FRAME_INTERVAL = 1                      # Toutes les frames 
-FRAME_INTERVAL = 3                      # 1 frame sur 3  
-```
-
-### ⚙️ Paramètres SAM2
-
-```python
-# Dans les cellules SAM2, vous pouvez ajuster :
-sam2_checkpoint = "sam2.1_hiera_large.pt"  # Modèle (large=précis, small=rapide)
-```
-
-### 💾 Gestion des sorties
-
-Les notebooks génèrent automatiquement :
-```
-videos/outputs/votre_video/
-├── frames/                             # 🖼️ Images extraites
-├── votre_video_project.json            # 📊 Résultats complets
-└── votre_video_annotated.mp4           # 🎥 Vidéo finale annotée
-```
-
----
-
-## 🔧 Troubleshooting
-
-### 🚨 Erreurs courantes
-
-| Erreur | Solution |
-|--------|----------|
-| `FileNotFoundError: config.json` | Vérifiez le nom et l'emplacement du fichier config |
-| `CUDA out of memory` | Réduisez FRAME_INTERVAL ou redémarrez le kernel |
-| `Module 'sam2' not found` | En local: relancez `.\install.ps1` |
-| `Checkpoint not found` | Vérifiez le téléchargement du modèle SAM2 |
-| `Kernel shutdown` | Relancer tout le notebook |
-
-
-### 🔄 Reprendre un traitement interrompu
-
-```python
-# GPU A100 conseillé sur colab
-# Les résultats partiels sont sauvegardés automatiquement
-# Relancer le notebook
-
-```
-
----
-
-## 📊 Analyse des Résultats
-
-### 📄 Fichier project.json
-
-Structure des résultats générés :
 ```json
+// Ancien: SD_13_06_2025_cam1_config.json
 {
-  "calibration": {
-    ...
+  "calibration": { 
+    "camera_matrix": [...],
+    "distortion_coeffs": [...],
+    // ... autres paramètres de calibration
   },
   "objects": [
-    ...
-  ],
-  "initial_annotations": [
     ...
   ]
 }
 ```
 
-### 🎥 Vidéo annotée
+**Devient :**
 
-La vidéo finale contient :
-TODO
+```json
+// Nouveau: SD_13_06_2025_cam1_calib.json
+{
+  "calibration":[...]
+}
+```
+
+```json
+// Nouveau: SD_13_06_2025_cam1_objects.json
+[
+  {
+    "objects": [...], 
+    "initial_annotations":[...]
+  }
+]
+```
 
 ---
 
-## 🚀 Prochaines étapes
+## 🎯 Structure des sorties
 
-- **📈 Analysez vos résultats** avec SAM_viz.ipynb
-- **🔄 Itérez** : ajustez la config si nécessaire  
-- **⚙️ Production** : [Pipeline Python](../README.md#mode-3--pipeline-python-bientôt) (bientôt)
+Les notebooks génèrent automatiquement :
+
+```
+📁 data/videos/outputs/nom_video/
+├── 📁 frames/                          # 🖼️ Images extraites
+├── 📁 masks/                           # 🎭 Masques de segmentation
+├── 📄 nom_video_project.json           # 📊 Résultats complets
+└── 🎥 nom_video_annotated.mp4          # 🎬 Vidéo finale annotée
+```
+
+---
+
+
+
+## 📚 Ressources
+
+- 📖 [Configuration des fichiers](../data/README.md)
+- 🚀 [Scripts d'exemple](../examples/)
+- 🧪 [Tests de la pipeline](../tests/)
+- 📋 [Documentation SAM2](https://github.com/facebookresearch/sam2)
+
+---

@@ -4,127 +4,231 @@
 [![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/pytorch-2.5+-orange)](https://pytorch.org)
 
-
 ## 🎬 Résultat en action
 
 Découvrez EVA2SPORT en action avec cette démonstration de segmentation en temps réel :
 
 📥 **[Télécharger la vidéo de démonstration](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
 
-
 Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
 
-## 🚀 Installation rapide
+---
 
-### 📋 Prérequis
+## 🚀 Installation préalable
 
-**Seul prérequis manuel :**
-- **Git** pour cloner le repository
+### 📋 Étape 1 : Installer Git (si nécessaire)
 
-**Prérequis automatiques :**
-- **Windows 10/11** avec PowerShell
-- **uv** (sera installé automatiquement par `install.ps1`)
-- **Python 3.10+** (sera installé automatiquement par uv si nécessaire)
-- **~5GB d'espace disque** (modèles + dépendances)
-- **Connexion internet** pour téléchargements
-
-#### Installation de Git (si pas déjà installé)
+**Vérifiez d'abord si Git est installé :**
 ```powershell
-# Option 1 : Téléchargement direct
-# https://git-scm.com/download/win
-
-# Option 2 : Via winget
-winget install Git.Git
-
-# Vérification
 git --version
 ```
 
-### 🚀 Installation du projet en 3 étapes
-
+**Si Git n'est pas installé :**
 ```powershell
-# 1. Cloner le projet
-git clone https://github.com/2nzi/EVA2SPORT.git
-cd EVA2SPORT
+# Option 1 : Téléchargement direct (recommandé)
+# https://git-scm.com/download/win
 
-# 2. Lancer l'installation automatique (installe uv + Python + dépendances)
-.\install.ps1
-
-# 3. Démarrer Jupyter
-uv run jupyter lab
+# Option 2 : Via winget (Windows 10/11)
+winget install Git.Git
 ```
 
-**C'est tout !** 🎉 L'installation se charge de :
-- ✅ Installer uv automatiquement
-- ✅ Détecter votre GPU automatiquement  
-- ✅ Installer Python 3.10 si nécessaire
-- ✅ Télécharger le modèle SAM2
+### 📋 Étape 2 : Récupérer le projet
+
+```powershell
+# Cloner le projet
+git clone https://github.com/2nzi/EVA2SPORT.git
+cd EVA2SPORT
+```
+
+---
+
+## 🎯 Recommandations d'utilisation
+
+### 🤔 **Quel mode choisir ?**
+
+| Votre situation | Mode recommandé | Avantages |
+|-----------------|-----------------|-----------|
+| 🖥️ **Pas de GPU puissant** <br/> *(GPU intégré, ancien GPU, ou CPU uniquement)* | 🌐 **Google Colab** | GPU gratuit A100, installation automatique, simplicité |
+| 💪 **GPU puissant disponible** <br/> *(RTX 3070+, RTX 4060+, ou équivalent)* | 💻 **Pipeline locale** | Performance maximale, contrôle total, pas de limite de temps |
+
+### 🚀 **Installation selon votre choix**
+
+#### 🌐 **Mode Google Colab (GPU faible/absent)**
+
+**Aucune installation nécessaire !** 
+- Utilisez directement : **[SAM_EVA2PERF_COLAB.ipynb](notebook/SAM_EVA2PERF_COLAB.ipynb)**
+- GPU A100 gratuit fourni par Google
+- Installation automatique de toutes les dépendances
+
+#### 💻 **Mode Pipeline locale (GPU puissant)**
+
+```powershell
+# Installation automatique complète
+.\install.ps1
+
+# Vérification de votre GPU
+uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
+```
+
+**L'installation se charge automatiquement de :**
+- ✅ Installer uv (gestionnaire de paquets Python moderne)
+- ✅ Détecter et configurer votre GPU automatiquement  
+- ✅ Installer Python 3.10+ si nécessaire
+- ✅ Télécharger le modèle SAM2 (~2GB)
 - ✅ Configurer l'environnement complet
 
 *⏱️ Temps d'installation : 5-15 minutes selon votre connexion*
 
+---
 
+## 📊 Workflow Complet - 3 Étapes
 
-## 📊 Workflow Complet - 3 Étapes Simples
+### 🎯 **Étape 1 : Préparez vos données**
 
-### 🎯 **Étape 1 : Configuration des Données**
-Créez vos fichiers de configuration avec nos interfaces extérieures :
-- 🛠️ **[Guide complet de configuration](data/README.md)** - Processus détaillé avec interfaces
-- 📄 Génère : `votre_video_config.json`
+**Créez vos fichiers de configuration** avec nos interfaces simplifiées :
+- 📊 **Calibration caméra** : <https://2nzi-footballfieldcalibaration.hf.space/>
+- 🎯 **Annotation objets** : <https://2nzi-pointtrackapp.hf.space/>
 
-### 🚀 **Étape 2 : Choisir votre Mode de Traitement**
+**📖 Guide détaillé :** [Configuration des données](data/README.md)
 
-#### 💻 **Mode Notebook Local** (recommandé)
+**Résultat :** Vous obtenez 2 fichiers pour votre vidéo :
+```
+📁 data/videos/
+├── 🎥 ma_video.mp4
+├── 📊 ma_video_calib.json          # Configuration caméra
+└── 🎯 ma_video_objects.json        # Annotations objets
+```
+
+### 🚀 **Étape 2 : Choisissez votre mode de traitement**
+
+#### 🌐 **Mode A : Google Colab (recommandé si GPU faible)**
+
+**3 types de traitement disponibles :**
+
+| Mode | Description | Temps | Usage |
+|------|-------------|-------|-------|
+| 🎯 **Segment événement** | Traite un événement précis (ex: 10s autour d'un but) | ⚡ 2-5 min | Actions spécifiques |
+| 🎬 **Vidéo complète** | Analyse toute la vidéo | ⏳ 10-30 min | Analyse globale |
+| 📊 **Multi-événements CSV** | Traite plusieurs événements depuis un fichier Timeline | ⏱️ Variable | Analyse en lot |
+
+**🚀 Démarrage :** [SAM_EVA2PERF_COLAB.ipynb](notebook/SAM_EVA2PERF_COLAB.ipynb)
+
+#### 💻 **Mode B : Pipeline locale (recommandé si GPU puissant)**
+
+**Plusieurs scripts selon vos besoins :**
 
 ```powershell
-# Après installation
+# Mode événement unique
+uv run python examples/event_processing.py
+
+# Mode pipeline complète
+uv run python tests/test_full_pipeline.py
+
+# Mode multi-événements 
+uv run python tests/test_multi_event_manager.py
+```
+
+**📖 Documentation complète :** [Guide pipeline locale](examples/README.md)
+
+#### 📔 **Mode C : Notebooks locaux (utilisateurs avancés)**
+
+Si vous préférez les notebooks en local avec votre GPU :
+
+```powershell
+# Démarrer Jupyter Lab
 uv run jupyter lab
 ```
 
-# Puis suivre le guide notebook
-- 📖 **[Guide notebook complet](notebook/README.md)** - Instructions détaillées
-- ⚡ Performance optimale avec votre GPU
+**Notebooks disponibles :**
+- `SAM_inference.ipynb` - Traitement principal SAM2
+- `SAM_viz.ipynb` - Visualisation des résultats
+- `SAM_inference_segment.ipynb` - Segmentation vidéo avancée
 
-#### ☁️ **Mode Google Colab** 
-- 📖 **[Guide Colab détaillé](notebook/README.md#mode-2--google-colab)**
-- ✅ Aucune installation requise
-- 🔄 GPU A100 + sauvegarde Drive
+**📖 Guide détaillé :** [Guide des notebooks](notebook/README.md)
 
-#### ⚙️ **Mode Pipeline Python** (bientôt)
-- 🚧 Scripts autonomes pour production
-- 🔄 En développement
+### 📊 **Étape 3 : Récupérez vos résultats**
 
-### 📊 **Étape 3 : Visualisation & Analyse**
-- 🎥 Génération vidéo annotée
-- 📈 Statistiques détaillées par équipe/joueur (TODO)
-
-### Premier test
-```powershell
-# Vérifier que tout fonctionne
-uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
+**Fichiers générés automatiquement :**
+```
+📁 data/videos/outputs/ma_video/
+├── 📁 frames/                          # Images extraites
+├── 📄 ma_video_project.json            # Données de tracking
+└── 🎥 ma_video_annotated.mp4           # Vidéo finale annotée
 ```
 
-## 📚 Organisation de la Documentation
+---
 
-Cette documentation est organisée en guides spécialisés pour vous accompagner étape par étape :
+## 🔧 Aide et Troubleshooting
+
+### 🚨 **Problèmes courants**
+
+| Problème | Solution |
+|----------|----------|
+| `git command not found` | ✅ Installez Git : https://git-scm.com/download/win |
+| `uv not found` | ✅ Relancez `.\install.ps1` |
+| `CUDA not available` | 🌐 Utilisez Google Colab |
+| `Out of memory` | 🔄 Réduisez la résolution ou utilisez Colab |
+| `FileNotFoundError: calib.json` | 📊 Suivez le guide de configuration des données |
+
+### 💡 **Optimisation performances**
+
+**Pour GPU local :**
+```powershell
+# Vérifier votre configuration GPU
+nvidia-smi
+
+# Surveiller l'utilisation durant le traitement
+watch -n 1 nvidia-smi
+```
+
+**Pour Google Colab :**
+- ✅ Utilisez Colab Pro pour GPU A100 et sessions plus longues
+- 🔄 Sauvegardez régulièrement sur Google Drive
+
+---
+
+## 📚 Organisation de la documentation
 
 | Guide | Objectif | Quand l'utiliser |
 |-------|----------|------------------|
-| **[📁 Configuration des Données](data/README.md)** | Processus complet avec les 2 interfaces externes | ✅ **Première étape obligatoire** |
-| **[📔 Guide des Notebooks](notebook/README.md)** | Utilisation locale + Colab | ✅ Après configuration des données |
-| **[🛠️ README Principal](README.md)** | Installation + vue d'ensemble | ✅ Point de départ |
+| **[🛠️ README Principal](README.md)** | Installation + vue d'ensemble | ✅ **Point de départ** |
+| **[📁 Configuration des Données](data/README.md)** | Processus complet avec interfaces externes | ✅ Étape 1 obligatoire |
+| **[📔 Guide des Notebooks](notebook/README.md)** | Notebooks Colab + locaux | ✅ Mode notebook choisi |
+| **[⚙️ Guide Pipeline](examples/README.md)** | Scripts Python | ✅ Mode pipeline choisi |
 
-### 🔄 Navigation rapide
-- 🚀 **Nouveau sur EVA2SPORT ?** → Commencez ici puis [Configuration](data/README.md)
-- 🎬 **Vidéo prête ?** → [Guide Notebooks](notebook/README.md)  
-- 🐛 **Problème ?** → Sections troubleshooting de chaque guide
+### 🔄 **Navigation rapide**
+- 🆕 **Nouveau sur EVA2SPORT ?** → Lisez ce README puis [Configuration des données](data/README.md)
+- 🎬 **Données prêtes ?** → Choisissez [Colab](notebook/SAM_EVA2PERF_COLAB.ipynb) ou [Pipeline locale](examples/)
+- 🐛 **Problème ?** → Consultez les sections troubleshooting de chaque guide
 
+---
 
+## 🎥 Ressources et tutoriels
 
-## 🎥 Tutoriels Vidéo
+### 📹 **Vidéos de démonstration**
+- 🎬 **[Tutoriel complet d'utilisation](docs/DEMO_TRACKING.mp4)**
+- 📊 **[Résultat final en action](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
 
-Nouveau sur EVA2SPORT ? Regardez notre tutoriel complet :
+### 🌟 **Prochaines étapes recommandées**
 
-📥 **[Télécharger la vidéo d'utilisation](docs/DEMO_TRACKING.mp4)**
+1. **🎯 Testez rapidement** avec un petit segment sur Google Colab
+2. **📊 Si satisfait**, passez à la pipeline locale pour de meilleures performances  
+3. **🔄 Itérez** : ajustez vos configurations selon les résultats
 
-📚 **[Tous les tutoriels disponibles](docs/README.md)**
+---
+
+### 📋 **Prérequis système**
+
+**Minimum (mode Colab) :**
+- Connexion internet stable
+- Navigateur moderne
+
+**Recommandé (mode local) :**
+- Windows 10/11 avec PowerShell
+- GPU NVIDIA avec 6GB+ VRAM (RTX 3070+, RTX 4060+)
+- ~5GB d'espace disque libre
+- 16GB+ RAM recommandés
+
+---
+
+*EVA2SPORT simplifie l'analyse vidéo sportive avec SAM2. Choisissez votre mode selon votre matériel et commencez en quelques minutes !*
