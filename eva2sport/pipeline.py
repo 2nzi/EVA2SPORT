@@ -124,7 +124,8 @@ class EVA2SportPipeline:
     
     def initialize_tracking(self) -> None:
         """Initialise le système de tracking SAM2"""
-        print("🤖 Initialisation du tracking SAM2...")
+        from .utils import eva_logger
+        eva_logger.tracking("Initialisation du tracking SAM2...")
         
         # Initialiser SAM2
         self.sam2_tracker.initialize_predictor()
@@ -162,7 +163,7 @@ class EVA2SportPipeline:
         self.results['added_objects'] = added_objects
         self.results['initial_annotations'] = annotations_data
         
-        print(f"✅ Tracking initialisé: {len(added_objects)} objets")
+        eva_logger.success(f"Tracking initialisé: {len(added_objects)} objets")
     
     def run_tracking_propagation(self) -> Dict[str, Any]:
         """Exécute la propagation bidirectionnelle du tracking"""
@@ -334,63 +335,70 @@ class EVA2SportPipeline:
         """
         self.config.display_config()
         
+        from .utils import eva_logger
+        
         try:
             # Étape 1: Charger la configuration
-            print("🔄 Étape 1/7: Chargement de la configuration...")
+            eva_logger.step(1, 7, "Chargement de la configuration")
             self.load_project_config()
             
             # Étape 2: Extraire les frames
-            print("🔄 Étape 2/7: Extraction des frames...")
+            eva_logger.step(2, 7, "Extraction des frames")
             self.extract_frames(force=force_extraction)
             
             # Étape 3: Initialiser le tracking
-            print("🔄 Étape 3/7: Initialisation du tracking...")
+            eva_logger.step(3, 7, "Initialisation du tracking")
             self.initialize_tracking()
             
             # Étape 4: Propagation du tracking
-            print("🔄 Étape 4/7: Propagation du tracking...")
+            eva_logger.step(4, 7, "Propagation du tracking")
             self.run_tracking_propagation()
             
             # Étape 5: Enrichissement
-            print("🔄 Étape 5/7: Enrichissement des annotations...")
+            eva_logger.step(5, 7, "Enrichissement des annotations")
             self.enrich_annotations()
             
             # Étape 6: Export
-            print("🔄 Étape 6/7: Export des résultats...")
+            eva_logger.step(6, 7, "Export des résultats")
             export_paths = self.export_results(include_visualization)
             
             # Étape 7: Export vidéo optionnel
             if export_video:
                 try:
-                    print("🔄 Étape 7/7: Export vidéo...")
+                    eva_logger.step(7, 7, "Export vidéo")
                     video_params = video_params or {}
                     video_path = self.export_video(**video_params)
                     export_paths['video'] = video_path
                 except Exception as e:
-                    print(f"⚠️ Export vidéo échoué (pipeline continue): {e}")
+                    eva_logger.warning(f"Export vidéo échoué (pipeline continue): {e}")
             
             # Résultats finaux
             final_results = self._create_final_results(export_paths)
             
-            print("\n🎉 Pipeline terminée avec succès!")
-            print(f"   📊 {final_results['frames_annotated']} frames traitées")
-            print(f"   🎯 {final_results['objects_tracked']} objets suivis") 
-            print(f"   📄 Fichier principal: {export_paths['json']}")
+            eva_logger.pipeline_end(success=True)
+            eva_logger.progress(f"{final_results['frames_annotated']} frames traitées")
+            eva_logger.progress(f"{final_results['objects_tracked']} objets suivis") 
+            eva_logger.info(f"Fichier principal: {export_paths['json']}")
             
             return final_results
             
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
+            from datetime import datetime
             error_result = {
                 'status': 'error',
                 'error': str(e),
                 'error_details': error_details,
-                'video_name': self.config.VIDEO_NAME
+                'video_name': self.config.VIDEO_NAME,
+                'timestamp': datetime.now().isoformat()
             }
-            print(f"❌ Erreur dans la pipeline: {e}")
-            print(f"💥 Détails de l'erreur:")
-            print(error_details)
+            self.results = error_result
+            
+            eva_logger.error(f"Erreur dans la pipeline: {e}")
+            eva_logger.error("Détails de l'erreur:")
+            eva_logger.error(error_details)
+            
             return error_result
     
     def run_simple(self, force_extraction: bool = False) -> str:

@@ -367,51 +367,13 @@ class Config:
     def get_video_info(self) -> Dict[str, Any]:
         """
         Méthode centralisée pour récupérer toutes les informations vidéo
-        Évite la duplication d'ouverture de cv2.VideoCapture
+        Utilise le VideoContextManager pour optimiser l'accès
         
         Returns:
             Dict contenant: fps, total_frames, width, height, duration_seconds
         """
-        if not self.video_path.exists():
-            return {
-                'fps': 25.0,
-                'total_frames': 0,
-                'width': 1920,
-                'height': 1080,
-                'duration_seconds': 0.0
-            }
-        
-        import cv2
-        cap = cv2.VideoCapture(str(self.video_path))
-        
-        if not cap.isOpened():
-            cap.release()
-            return {
-                'fps': 25.0,
-                'total_frames': 0,
-                'width': 1920,
-                'height': 1080,
-                'duration_seconds': 0.0
-            }
-        
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        
-        cap.release()
-        
-        # Valeurs par défaut si invalides
-        fps = fps if fps > 0 else 25.0
-        duration_seconds = total_frames / fps if fps > 0 and total_frames > 0 else 0.0
-        
-        return {
-            'fps': fps,
-            'total_frames': total_frames,
-            'width': width,
-            'height': height,
-            'duration_seconds': duration_seconds
-        }
+        from .utils import video_context
+        return video_context.get_video_info_cached(self.video_path)
 
     def get_video_fps(self) -> float:
         """Récupère le FPS de la vidéo (utilise la méthode centralisée)"""

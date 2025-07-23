@@ -45,14 +45,12 @@ class VideoProcessor:
         print(f"📊 Vidéo: {total_frames} frames, {fps:.1f} FPS")
         print(f"📊 Frames à extraire: ~{total_frames // self.config.FRAME_INTERVAL}")
 
-        cap = cv2.VideoCapture(str(self.config.video_path))
-        if not cap.isOpened():
-            raise ValueError(f"❌ Impossible d'ouvrir la vidéo: {self.config.video_path}")
+        from ..utils import video_context
+        
+        with video_context.open_video(self.config.video_path) as cap:
+            extracted_count = 0
+            frame_idx = 0
 
-        extracted_count = 0
-        frame_idx = 0
-
-        try:
             while True:
                 ret, frame = cap.read()
                 if not ret:
@@ -70,9 +68,6 @@ class VideoProcessor:
                         print(f"📊 Progrès: {extracted_count} frames extraites ({progress:.1f}%)")
 
                 frame_idx += 1
-
-        finally:
-            cap.release()
 
         print(f"✅ {extracted_count} frames extraites")
         return extracted_count
@@ -204,13 +199,10 @@ class VideoProcessor:
                 frame_file.unlink()
         
         # Extraction des frames du segment
-        cap = cv2.VideoCapture(str(self.config.video_path))
-        if not cap.isOpened():
-            raise ValueError(f"❌ Impossible d'ouvrir la vidéo: {self.config.video_path}")
+        from ..utils import video_context
         
-        extracted_count = 0
-        
-        try:
+        with video_context.open_video(self.config.video_path) as cap:
+            extracted_count = 0
             cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
             
             for frame_idx in range(start_frame, end_frame + 1):
@@ -224,9 +216,6 @@ class VideoProcessor:
                     
                     cv2.imwrite(str(filename), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
                     extracted_count += 1
-        
-        finally:
-            cap.release()
-        
-        print(f"✅ {extracted_count} frames du segment extraites")
-        return extracted_count
+            
+            print(f"✅ {extracted_count} frames du segment extraites")
+            return extracted_count

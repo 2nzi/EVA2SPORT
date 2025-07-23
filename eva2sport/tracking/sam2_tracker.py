@@ -65,12 +65,19 @@ class SAM2Tracker:
         if not hasattr(self.config, 'extracted_frames_count') or self.config.extracted_frames_count == 0:
             raise ValueError(f"❌ Aucune frame extraite. Extrayez d'abord les frames.")
         
-        # Initialisation de l'état d'inférence
+        # Optimisation automatique des paramètres mémoire
+        from ..utils import gpu_optimizer
+        memory_settings = gpu_optimizer.optimize_sam2_memory_settings()
+        
+        if verbose:
+            recommendation = gpu_optimizer.get_memory_recommendation()
+            print(f"   💾 Mémoire GPU: {recommendation}")
+            print(f"   ⚙️  Paramètres SAM2: video_cpu={memory_settings['offload_video_to_cpu']}, state_cpu={memory_settings['offload_state_to_cpu']}")
+        
+        # Initialisation de l'état d'inférence avec paramètres optimisés
         self.inference_state = self.predictor.init_state(
             video_path=str(self.config.frames_dir),
-            offload_video_to_cpu=True,    # Économise la mémoire GPU
-            offload_state_to_cpu=False,    # Garde l'état en GPU
-            # offload_state_to_cpu=True 
+            **memory_settings
         )
         
         # Reset de l'état
@@ -86,8 +93,9 @@ class SAM2Tracker:
             print(f"   ✅ Correspondance: {'OK' if self.config.extracted_frames_count == loaded_frames else 'ERREUR'}")
             
             if self.config.device.type == "cuda":
-                allocated = torch.cuda.memory_allocated() / 1024**3
-                print(f"   💾 GPU Memory: {allocated:.2f}GB")
+                from ..utils import gpu_optimizer
+                stats = gpu_optimizer.get_memory_stats()
+                print(f"   💾 GPU Memory: {stats['allocated']:.2f}GB utilisés / {stats['total']:.2f}GB total")
         
         if self.config.extracted_frames_count != loaded_frames:
             print(f"⚠️ Incohérence frames : {self.config.extracted_frames_count} extraites vs {loaded_frames} chargées")
