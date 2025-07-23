@@ -149,7 +149,7 @@ python tests/test_multi_event_manager.py
 | `git command not found` | ✅ Installez Git : https://git-scm.com/download/win |
 | `uv not found` | ✅ Relancez `.\install.ps1` |
 | `CUDA not available` | 🌐 Utilisez Google Colab |
-| `Out of memory` | 🔄 Réduisez la résolution ou utilisez Colab |
+| `Out of memory` | 🔄 Augmentez la FRAME_INTERVAL ou utilisez Colab |
 | `FileNotFoundError: calib.json` | 📊 Suivez le guide de configuration des données |
 
 ### 💡 **Optimisation performances**
