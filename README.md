@@ -131,7 +131,7 @@ uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {tor
 **Plusieurs scripts selon vos besoins :**
 
 ```powershell
-# Mode événement unique
+# Mode événement lecture csv events
 python examples/event_processing.py
 
 # Mode pipeline complète

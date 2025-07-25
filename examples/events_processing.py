@@ -24,8 +24,6 @@ def csv_processing():
     # Créer le gestionnaire
     manager = MultiEventManager(video_name)
     
-    # Option 1: Utiliser la méthode de commodité
-    print("\n📊 Option 1: Méthode de commodité")
     results = manager.process_events_from_csv(
         csv_file=csv_file,
         timestamp_column='Start time',
@@ -39,24 +37,7 @@ def csv_processing():
             'cleanup_frames': True
         }
     )
-    
-    # Option 2: Utiliser la méthode générale
-    # print("\n📊 Option 2: Méthode générale")
-    # results = manager.process_multiple_events(
-    #     csv_file=csv_file,
-    #     csv_config={
-    #         'timestamp_column': 'Start time',
-    #         'filter_column': 'Row',
-    #         'filter_value': 'PdB'
-    #     },
-    #     segment_offset_before_seconds=5.0,
-    #     segment_offset_after_seconds=5.0,
-    #     video_params={
-    #         'fps': 5,
-    #         'show_minimap': True,
-    #         'cleanup_frames': True
-    #     }
-    # )
+
     
     print(f"\n✅ Résultats: {results['successful_events']}/{results['total_events']} événements traités")
 
