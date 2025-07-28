@@ -449,3 +449,58 @@ class Config:
             Path du fichier JSON dans data/videos/
         """
         return self.resolve_data_file_path(json_filename)
+
+    def get_all_annotations_in_range(self, initial_annotations: List[Dict], 
+                               start_frame: Optional[int] = None,
+                               end_frame: Optional[int] = None) -> List[Dict]:
+        """
+        Retourne TOUTES les annotations dans la plage de traitement
+        Approche multi-anchor : utilise toutes les annotations disponibles au lieu d'une seule
+        
+        Args:
+            initial_annotations: Liste des annotations initiales
+            start_frame: Frame de début (auto-calculé si None)
+            end_frame: Frame de fin (auto-calculé si None)
+            
+        Returns:
+            Liste des annotations dans la plage, triées par frame
+        """
+        if not initial_annotations:
+            return []
+        
+        # Calculer les bornes si pas fournies
+        if start_frame is None or end_frame is None:
+            if self.is_event_mode:
+                fps = self.get_video_fps()
+                offset_before_frames = int((self.SEGMENT_OFFSET_BEFORE_SECONDS or 0.0) * fps)
+                offset_after_frames = int((self.SEGMENT_OFFSET_AFTER_SECONDS or 0.0) * fps)
+                
+                start_frame = max(0, self.event_frame - offset_before_frames)
+                end_frame = self.event_frame + offset_after_frames
+                
+            elif self.is_segment_mode:
+                # En mode segment, utiliser la frame de référence
+                reference_frame = self.get_closest_initial_annotation_frame(initial_annotations)
+                start_frame, end_frame, _ = self.calculate_segment_bounds_and_anchor(
+                    reference_frame, verbose=False
+                )
+            else:
+                # Mode complet : toutes les annotations sont valides
+                return sorted(initial_annotations, key=lambda x: x.get('frame', 0))
+        
+        # Filtrer les annotations dans la plage
+        valid_annotations = []
+        for ann in initial_annotations:
+            annotation_frame = ann.get('frame', 0)
+            if start_frame <= annotation_frame <= end_frame:
+                valid_annotations.append(ann)
+        
+        # Trier par frame pour un traitement ordonné
+        valid_annotations.sort(key=lambda x: x.get('frame', 0))
+        
+        from .utils import eva_logger
+        eva_logger.info(f"Multi-anchor: {len(valid_annotations)} frames d'annotation trouvées dans plage [{start_frame}, {end_frame}]")
+        for ann in valid_annotations:
+            eva_logger.debug(f"  📍 Frame {ann.get('frame', 0)}: {len(ann.get('annotations', []))} objets")
+        
+        return valid_annotations

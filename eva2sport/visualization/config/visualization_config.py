@@ -19,6 +19,11 @@ class VisualizationConfig:
     cleanup_frames: bool = True
     force_regenerate: bool = False
     
+    # Paramètres de qualité vidéo
+    video_quality: str = 'medium'  # 'low', 'medium', 'high', 'ultra'
+    video_codec_priority: Tuple[str, ...] = ('avc1', 'h264', 'H264', 'mp4v')
+    video_bitrate: Optional[int] = None  # Bitrate en kbps, None pour auto
+    
     # Minimap
     show_minimap: bool = True
     minimap_config: MinimapConfig = None
@@ -56,6 +61,15 @@ class VisualizationConfig:
         if self.fps <= 0:
             raise ValueError(f"fps doit être positif, reçu: {self.fps}")
         
+        # Validation video_quality
+        valid_qualities = ['low', 'medium', 'high', 'ultra']
+        if self.video_quality not in valid_qualities:
+            raise ValueError(f"video_quality doit être l'un de {valid_qualities}, reçu: {self.video_quality}")
+        
+        # Validation video_bitrate
+        if self.video_bitrate is not None and self.video_bitrate <= 0:
+            raise ValueError(f"video_bitrate doit être positif ou None, reçu: {self.video_bitrate}")
+        
         # Validation annotation_font_size
         if self.annotation_font_size <= 0:
             raise ValueError(f"annotation_font_size doit être positif, reçu: {self.annotation_font_size}")
@@ -78,6 +92,9 @@ class VisualizationConfig:
             fps=self.fps,
             cleanup_frames=self.cleanup_frames,
             force_regenerate=self.force_regenerate,
+            video_quality=self.video_quality,
+            video_codec_priority=self.video_codec_priority,
+            video_bitrate=self.video_bitrate,
             show_minimap=self.show_minimap,
             minimap_config=self.minimap_config,
             show_image_annotations=self.show_image_annotations,
@@ -98,6 +115,9 @@ class VisualizationConfig:
             'fps': self.fps,
             'cleanup_frames': self.cleanup_frames,
             'force_regenerate': self.force_regenerate,
+            'video_quality': self.video_quality,
+            'video_codec_priority': self.video_codec_priority,
+            'video_bitrate': self.video_bitrate,
             'show_minimap': self.show_minimap,
             'minimap_config': self.minimap_config.to_dict(),
             'show_image_annotations': self.show_image_annotations,
@@ -125,11 +145,13 @@ class VisualizationConfig:
     
     @classmethod
     def get_high_quality(cls) -> 'VisualizationConfig':
-        """Configuration haute qualité"""
+        """Configuration haute qualité pour export final"""
         return cls(
             figsize=(20, 12),
             dpi=150,
             fps=60,
+            video_quality='ultra',
+            video_bitrate=8000,  # 8 Mbps
             minimap_config=MinimapConfig.get_analysis_view()
         )
     
@@ -140,6 +162,8 @@ class VisualizationConfig:
             figsize=(10, 6),
             dpi=80,
             fps=15,
+            video_quality='low',
+            video_bitrate=1000,  # 1 Mbps
             cleanup_frames=False,
             minimap_config=MinimapConfig.get_broadcast_view()
         )
@@ -151,7 +175,22 @@ class VisualizationConfig:
             figsize=(16, 10),
             dpi=120,
             fps=30,
+            video_quality='high',
+            video_bitrate=4000,  # 4 Mbps
             minimap_config=MinimapConfig.get_tactical_view()
+        )
+    
+    @classmethod
+    def get_web_optimized(cls) -> 'VisualizationConfig':
+        """Configuration optimisée pour la compatibilité web"""
+        return cls(
+            figsize=(16, 9),  # Format 16:9 standard
+            dpi=100,
+            fps=30,
+            video_quality='medium',
+            video_bitrate=2500,  # 2.5 Mbps - bon compromis qualité/taille
+            video_codec_priority=('avc1', 'h264'),  # Priorité absolue à H.264
+            minimap_config=MinimapConfig.get_broadcast_view()
         )
     
     def __str__(self) -> str:

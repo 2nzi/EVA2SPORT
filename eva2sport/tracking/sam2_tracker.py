@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 
 from ..config import Config
+from ..utils import eva_logger
 
 
 class SAM2Tracker:
@@ -271,4 +272,221 @@ class SAM2Tracker:
                 }
         
         print(f"✅ Propagation terminée: {len(propagation_results)} frames")
+        return propagation_results
+
+    def add_multiple_initial_annotations(self, project_config: Dict[str, Any], 
+                                   segment_info: Optional[Dict] = None) -> Tuple[List[Dict], List[Dict]]:
+        """
+        Version multi-anchor : ajoute TOUTES les annotations dans la plage au lieu d'une seule
+        
+        Args:
+            project_config: Configuration du projet
+            segment_info: Info du segment (pour mode segment/event)
+        
+        Returns:
+            Tuple (objets ajoutés, données annotations)
+        """
+        
+        eva_logger.tracking("Ajout des annotations initiales multi-anchor...")
+        
+        # Récupérer TOUTES les annotations dans la plage
+        if segment_info:
+            start_frame = segment_info['start_frame']
+            end_frame = segment_info['end_frame']
+            anchor_annotations = self.config.get_all_annotations_in_range(
+                project_config['initial_annotations'], start_frame, end_frame
+            )
+        else:
+            anchor_annotations = self.config.get_all_annotations_in_range(
+                project_config['initial_annotations']
+            )
+        
+        if not anchor_annotations:
+            eva_logger.error("Aucune annotation trouvée dans la plage de traitement")
+            return [], []
+        
+        eva_logger.success(f"Mode multi-anchor: {len(anchor_annotations)} frames d'ancrage")
+        
+        # Traiter chaque frame d'ancrage
+        all_added_objects = []
+        all_annotations_data = []
+        
+        for i, frame_data in enumerate(anchor_annotations):
+            frame_idx = frame_data.get('frame', 0)
+            annotations = frame_data.get('annotations', [])
+            
+            eva_logger.info(f"Traitement anchor {i+1}/{len(anchor_annotations)}: frame {frame_idx} ({len(annotations)} objets)")
+            
+            # Calculer l'index dans le segment traité
+            if segment_info:
+                processed_frame_idx = self._calculate_processed_frame_index(frame_idx, segment_info)
+            else:
+                processed_frame_idx = frame_idx
+            
+            # Ajouter les annotations pour cette frame
+            frame_objects, frame_data = self._add_annotations_for_frame(
+                processed_frame_idx, annotations, project_config
+            )
+            
+            all_added_objects.extend(frame_objects)
+            all_annotations_data.extend(frame_data)
+        
+        eva_logger.success(f"Multi-anchor terminé: {len(all_added_objects)} objets sur {len(anchor_annotations)} frames")
+        
+        return all_added_objects, all_annotations_data
+
+    def _calculate_processed_frame_index(self, original_frame: int, segment_info: Dict) -> int:
+        """Calcule l'index de frame dans le segment traité"""
+        start_frame = segment_info['start_frame']
+        return (original_frame - start_frame) // self.config.FRAME_INTERVAL
+
+    def _add_annotations_for_frame(self, frame_idx: int, annotations: List[Dict], 
+                                project_config: Dict) -> Tuple[List[Dict], List[Dict]]:
+        """Ajoute les annotations pour une frame spécifique"""
+        
+        # Création du mapping obj_id -> obj_type  
+        obj_types = {}
+        for obj in project_config['objects']:
+            obj_types[obj['obj_id']] = obj['obj_type']
+        
+        added_objects = []
+        annotations_data = []
+        
+        for annotation in annotations:
+            obj_id = annotation['obj_id']
+            obj_type = obj_types.get(obj_id, f'unknown_{obj_id}')
+            points_data = annotation['points']
+            
+            # Extraction des coordonnées et labels
+            points = np.array([[p['x'], p['y']] for p in points_data], dtype=np.float32)
+            labels = np.array([p['label'] for p in points_data], dtype=np.int32)
+            
+            eva_logger.debug(f"  🎯 Frame {frame_idx} - Objet {obj_id} ({obj_type}): {len(points)} points à ({points[0][0]:.0f}, {points[0][1]:.0f})")
+            
+            # Ajouter à SAM2
+            _, out_obj_ids, out_mask_logits = self.predictor.add_new_points_or_box(
+                self.inference_state,
+                frame_idx,
+                obj_id, 
+                points,
+                labels
+            )
+            
+            # Éviter les doublons dans added_objects
+            if not any(obj['obj_id'] == obj_id for obj in added_objects):
+                added_objects.append({
+                    'obj_id': obj_id,
+                    'obj_type': obj_type,
+                    'points_count': len(points)
+                })
+            
+            # Stocker les données d'annotation
+            annotations_data.append({
+                'frame_idx': frame_idx,
+                'obj_id': obj_id,
+                'obj_type': obj_type,
+                'points': points_data
+            })
+        
+        return added_objects, annotations_data
+
+    def run_multi_anchor_propagation(self, anchor_frames: List[int], start_frame: int, end_frame: int) -> Dict[str, Any]:
+        """
+        Exécute la propagation SAM2 avec multiple anchors par segments
+        
+        Args:
+            anchor_frames: Liste des frames d'ancrage (triées par ordre croissant)
+            start_frame: Frame de début du segment
+            end_frame: Frame de fin du segment
+            
+        Returns:
+            Résultats de propagation pour toutes les frames
+        """
+        if self.predictor is None or self.inference_state is None:
+            raise ValueError("❌ SAM2 non initialisé")
+        
+        from ..utils import eva_logger
+        
+        eva_logger.info(f"Propagation multi-anchor avec {len(anchor_frames)} anchors")
+        eva_logger.info(f"Segment: [{start_frame}, {end_frame}], Anchors: {anchor_frames}")
+        
+        propagation_results = {}
+        
+        # Trier les anchors pour s'assurer qu'ils sont dans l'ordre
+        sorted_anchors = sorted(anchor_frames)
+        
+        # Segments à traiter
+        segments = []
+        
+        # Segment 1: start_frame → premier_anchor (si le premier anchor n'est pas au début)
+        if sorted_anchors[0] > start_frame:
+            segments.append({
+                'start': start_frame,
+                'end': sorted_anchors[0],
+                'anchor': sorted_anchors[0],
+                'direction': 'reverse',
+                'name': f"Segment 1: [{start_frame} → {sorted_anchors[0]}] depuis anchor({sorted_anchors[0]})"
+            })
+        
+        # Segments intermédiaires: anchor_i → anchor_i+1
+        for i in range(len(sorted_anchors) - 1):
+            current_anchor = sorted_anchors[i]
+            next_anchor = sorted_anchors[i + 1]
+            
+            segments.append({
+                'start': current_anchor,
+                'end': next_anchor,
+                'anchor': current_anchor,
+                'direction': 'forward',
+                'name': f"Segment {i+2}: [{current_anchor} → {next_anchor}] depuis anchor({current_anchor})"
+            })
+        
+        # Segment final: dernier_anchor → end_frame (si le dernier anchor n'est pas à la fin)
+        if sorted_anchors[-1] < end_frame:
+            segments.append({
+                'start': sorted_anchors[-1],
+                'end': end_frame,
+                'anchor': sorted_anchors[-1],
+                'direction': 'forward',
+                'name': f"Segment {len(segments)+1}: [{sorted_anchors[-1]} → {end_frame}] depuis anchor({sorted_anchors[-1]})"
+            })
+        
+        # Exécuter chaque segment
+        for i, segment in enumerate(segments, 1):
+            eva_logger.info(f"🔄 {segment['name']}")
+            
+            if segment['direction'] == 'reverse':
+                # Propagation inverse
+                max_frames = segment['anchor'] - segment['start'] + 1
+                
+                for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(
+                    self.inference_state,
+                    start_frame_idx=segment['anchor'],
+                    max_frame_num_to_track=max_frames,
+                    reverse=True
+                ):
+                    if segment['start'] <= out_frame_idx <= segment['end']:
+                        propagation_results[out_frame_idx] = {
+                            'obj_ids': out_obj_ids,
+                            'mask_logits': out_mask_logits
+                        }
+            else:
+                # Propagation avant
+                max_frames = segment['end'] - segment['start'] + 1
+                
+                for out_frame_idx, out_obj_ids, out_mask_logits in self.predictor.propagate_in_video(
+                    self.inference_state,
+                    start_frame_idx=segment['anchor'],
+                    max_frame_num_to_track=max_frames,
+                    reverse=False
+                ):
+                    if segment['start'] <= out_frame_idx <= segment['end']:
+                        # Éviter de réécraser les frames d'ancrage déjà traitées
+                        if out_frame_idx not in propagation_results:
+                            propagation_results[out_frame_idx] = {
+                                'obj_ids': out_obj_ids,
+                                'mask_logits': out_mask_logits
+                            }
+        
+        eva_logger.success(f"Propagation multi-anchor terminée: {len(propagation_results)} frames")
         return propagation_results

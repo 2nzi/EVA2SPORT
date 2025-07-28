@@ -29,8 +29,8 @@ def csv_processing():
         timestamp_column='Start time',
         filter_column='Row',
         filter_value='PdB',
-        segment_offset_before_seconds=10.0,
-        segment_offset_after_seconds=5.0,
+        segment_offset_before_seconds=3.0,
+        segment_offset_after_seconds=3.0,
         video_params={
             'fps': 5,
             'show_minimap': True,

@@ -46,10 +46,11 @@ class VideoProcessor:
         print(f"📊 Frames à extraire: ~{total_frames // self.config.FRAME_INTERVAL}")
 
         from ..utils import video_context
-        
+
         with video_context.open_video(self.config.video_path) as cap:
             extracted_count = 0
             frame_idx = 0
+            frame_mapping = []
 
             while True:
                 ret, frame = cap.read()
@@ -216,6 +217,6 @@ class VideoProcessor:
                     
                     cv2.imwrite(str(filename), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
                     extracted_count += 1
-            
-            print(f"✅ {extracted_count} frames du segment extraites")
-            return extracted_count
+        
+        print(f"✅ {extracted_count} frames du segment extraites")
+        return extracted_count

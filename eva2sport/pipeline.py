@@ -123,75 +123,86 @@ class EVA2SportPipeline:
         return frames_count
     
     def initialize_tracking(self) -> None:
-        """Initialise le système de tracking SAM2"""
+        """Initialise le système de tracking SAM2 avec multi-anchor"""
         from .utils import eva_logger
-        eva_logger.tracking("Initialisation du tracking SAM2...")
+        eva_logger.tracking("Initialisation du tracking SAM2 multi-anchor...")
         
         # Initialiser SAM2
         self.sam2_tracker.initialize_predictor()
         self.sam2_tracker.initialize_inference_state()
         
-        # Ajouter les annotations initiales
+        # Ajouter les annotations initiales - VERSION MULTI-ANCHOR
         if not self.project_config:
             raise ValueError("❌ Configuration projet requise")
         
         segment_info = None
         if self.config.is_segment_mode or self.config.is_event_mode:
-            # Utilise la frame de référence choisie lors de l’extraction
             reference_frame = self.results.get('reference_frame')
             if reference_frame is None:
                 reference_frame = self.project_config['initial_annotations'][0].get('frame', 0)
             segment_info = self.video_processor.get_segment_info(reference_frame)
 
-            # Filtrer les initial_annotations pour ne garder que celle(s) dans le segment
-            start_frame = segment_info['start_frame']
-            end_frame = segment_info['end_frame']
-            filtered_initial_annotations = [
-                ann for ann in self.project_config['initial_annotations']
-                if start_frame <= ann.get('frame', 0) <= end_frame
-            ]
-            # Créer une copie temporaire du project_config pour l’appel
-            project_config_filtered = dict(self.project_config)
-            project_config_filtered['initial_annotations'] = filtered_initial_annotations
-        else:
-            project_config_filtered = self.project_config
-
-        added_objects, annotations_data = self.sam2_tracker.add_initial_annotations(
-            project_config_filtered, segment_info
+        # CHANGEMENT PRINCIPAL : utiliser add_multiple_initial_annotations
+        added_objects, annotations_data = self.sam2_tracker.add_multiple_initial_annotations(
+            self.project_config, segment_info
         )
         
         self.results['added_objects'] = added_objects
         self.results['initial_annotations'] = annotations_data
         
-        eva_logger.success(f"Tracking initialisé: {len(added_objects)} objets")
+        eva_logger.success(f"Tracking multi-anchor initialisé: {len(added_objects)} objets")
     
     def run_tracking_propagation(self) -> Dict[str, Any]:
-        """Exécute la propagation bidirectionnelle du tracking"""
-        print("🔄 Propagation du tracking...")
+        """Exécute la propagation du tracking avec support multi-anchor"""
+        from .utils import eva_logger
+        eva_logger.info("Propagation du tracking...")
         
         if not self.project_config:
             raise ValueError("❌ Configuration projet requise")
-        
+
         # 1. Créer la structure projet vide
         project_data = self.exporter.create_project_structure(
             self.project_config, 
             self.results['added_objects']
         )
+
+        # 2. Vérifier si on a plusieurs anchors
+        initial_annotations = self.results.get('initial_annotations', [])
+        #anchor_frames = [ann['frame_for_sam'] for ann in initial_annotations]
+        anchor_frames = [ann['frame_idx'] for ann in initial_annotations]
+        unique_anchor_frames = sorted(list(set(anchor_frames)))
         
-        # 2. Calculer les paramètres pour SAM2
-        anchor_frame_idx = self.enricher._get_anchor_processed_index(project_data, self.project_config)
-        
-        if self.config.is_segment_mode or self.config.is_event_mode:
-            total_frames = self.config.extracted_frames_count
+        if len(unique_anchor_frames) > 1:
+            # MODE MULTI-ANCHOR
+            eva_logger.info(f"Mode multi-anchor détecté: {len(unique_anchor_frames)} frames d'ancrage")
+            
+            if self.config.is_segment_mode or self.config.is_event_mode:
+                total_frames = self.config.extracted_frames_count
+                start_frame = 0
+                end_frame = total_frames - 1
+            else:
+                start_frame = 0
+                end_frame = len([f for f in project_data['metadata']['frame_mapping'] if f is not None]) - 1
+            
+            # Utiliser la nouvelle méthode multi-anchor
+            propagation_results = self.sam2_tracker.run_multi_anchor_propagation(
+                unique_anchor_frames, start_frame, end_frame
+            )
         else:
-            total_frames = len([f for f in project_data['metadata']['frame_mapping'] if f is not None])
-        
-        # 3. SAM2Tracker fait la propagation
-        propagation_results = self.sam2_tracker.run_bidirectional_propagation(
-            anchor_frame_idx, total_frames
-        )
-        
-        # 4. AnnotationEnricher convertit les résultats bruts en annotations enrichies
+            # MODE SINGLE-ANCHOR (fallback)
+            eva_logger.info("Mode single-anchor (fallback)")
+            anchor_frame_idx = unique_anchor_frames[0] if unique_anchor_frames else 0
+            
+            if self.config.is_segment_mode or self.config.is_event_mode:
+                total_frames = self.config.extracted_frames_count
+            else:
+                total_frames = len([f for f in project_data['metadata']['frame_mapping'] if f is not None])
+            
+            propagation_results = self.sam2_tracker.run_bidirectional_propagation(
+                anchor_frame_idx, total_frames
+            )
+
+        # 3. Convertir les résultats en annotations enrichies
         project_data = self.enricher.process_propagation_results(
             propagation_results, project_data, self.project_config
         )
@@ -199,7 +210,7 @@ class EVA2SportPipeline:
         self.project_data = project_data
         total_annotations = sum(len(annotations) for annotations in project_data['annotations'].values())
         
-        print(f"✅ Propagation terminée: {total_annotations} annotations sur {len(project_data['annotations'])} frames")
+        eva_logger.success(f"Propagation terminée: {total_annotations} annotations sur {len(project_data['annotations'])} frames")
         return project_data
     
     def enrich_annotations(self) -> Dict[str, Any]:

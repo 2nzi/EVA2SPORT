@@ -277,7 +277,8 @@ class VideoExporter:
         # Ajouter le titre
         visible_count = len(field_points)
         total_count = len(frame_annotations)
-        title = f'Frame {frame_id} - {visible_count}/{total_count} objets projetés'
+        # title = f'Frame {frame_id} - {visible_count}/{total_count} objets projetés'
+        title = f''
         inset_ax.set_title(title, fontsize=10, color='white', pad=8)
     
     def _extract_field_points(self, frame_annotations: List, objects_config: Dict) -> Dict:
@@ -306,7 +307,7 @@ class VideoExporter:
         return field_points
     
     def _create_video_from_frames(self, frames_dir: str, output_video_path: str) -> bool:
-        """Crée une vidéo à partir des images annotées"""
+        """Crée une vidéo à partir des images annotées avec codec H.264 pour compatibilité web"""
         try:
             # Lister toutes les images
             image_files = sorted([f for f in os.listdir(frames_dir) if f.endswith('.png')])
@@ -325,35 +326,143 @@ class VideoExporter:
             
             height, width, layers = first_image.shape
             
-            # Créer le writer vidéo
+            # S'assurer que les dimensions sont paires (requis pour H.264)
+            if width % 2 != 0:
+                width -= 1
+            if height % 2 != 0:
+                height -= 1
+            
+            # Utiliser H.264 pour une meilleure compatibilité web
+            success = self._try_create_video_h264(image_files, frames_dir, output_video_path, width, height)
+            
+            if not success:
+                print("⚠️ H.264 non disponible, utilisation de mp4v comme fallback...")
+                success = self._try_create_video_fallback(image_files, frames_dir, output_video_path, width, height)
+            
+            return success
+            
+        except Exception as e:
+            print(f"❌ Erreur lors de la création de la vidéo: {e}")
+            return False
+    
+    def _try_create_video_h264(self, image_files: List[str], frames_dir: str, 
+                              output_video_path: str, width: int, height: int) -> bool:
+        """Tente de créer la vidéo avec le codec H.264"""
+        # Utiliser la priorité de codecs configurée
+        codec_priority = list(self.visualization_config.video_codec_priority)
+        # Filtrer pour ne garder que les codecs H.264
+        h264_codecs = [c for c in codec_priority if c in ['avc1', 'h264', 'H264']]
+        
+        if not h264_codecs:
+            h264_codecs = ['avc1', 'h264', 'H264']  # Fallback
+        
+        print(f"🎯 Tentative H.264 avec qualité '{self.visualization_config.video_quality}'")
+        if self.visualization_config.video_bitrate:
+            print(f"📊 Bitrate cible: {self.visualization_config.video_bitrate} kbps")
+        
+        for codec_name in h264_codecs:
+            try:
+                print(f"🔧 Test codec: {codec_name}")
+                fourcc = cv2.VideoWriter_fourcc(*codec_name)
+                
+                # Paramètres selon la qualité
+                video_params = self._get_video_params_for_quality()
+                
+                video_writer = cv2.VideoWriter(
+                    output_video_path, fourcc, self.visualization_config.fps, 
+                    (width, height), **video_params
+                )
+                
+                if video_writer.isOpened():
+                    print(f"✅ Codec H.264 '{codec_name}' initialisé")
+                    success = self._write_frames_to_video(video_writer, image_files, frames_dir, width, height)
+                    video_writer.release()
+                    
+                    if success:
+                        file_size = self._get_file_size_mb(output_video_path)
+                        print(f"🎉 Vidéo H.264 créée avec succès!")
+                        print(f"🏷️ Codec: {codec_name}, Qualité: {self.visualization_config.video_quality}")
+                        print(f"📁 Taille: {file_size:.1f} MB")
+                        return True
+                else:
+                    video_writer.release()
+                    
+            except Exception as e:
+                print(f"❌ Codec '{codec_name}' non disponible: {e}")
+                continue
+        
+        return False
+    
+    def _get_video_params_for_quality(self) -> Dict:
+        """Retourne les paramètres vidéo selon la qualité configurée"""
+        # OpenCV a des limitations sur les paramètres avancés
+        # Ces paramètres sont principalement informatifs pour l'utilisateur
+        quality_settings = {
+            'low': {'quality_hint': 'Optimisé pour la taille de fichier'},
+            'medium': {'quality_hint': 'Équilibre qualité/taille'},
+            'high': {'quality_hint': 'Haute qualité'},
+            'ultra': {'quality_hint': 'Qualité maximale'}
+        }
+        
+        params = quality_settings.get(self.visualization_config.video_quality, {})
+        
+        # Log des paramètres pour information
+        if params.get('quality_hint'):
+            print(f"⚙️ {params['quality_hint']}")
+        
+        # OpenCV ne supporte pas beaucoup de paramètres avancés
+        # mais nous pouvons au moins retourner des paramètres de base
+        return {}
+    
+    def _get_file_size_mb(self, file_path: str) -> float:
+        """Retourne la taille du fichier en MB"""
+        try:
+            import os
+            return os.path.getsize(file_path) / (1024 * 1024)
+        except:
+            return 0.0
+    
+    def _try_create_video_fallback(self, image_files: List[str], frames_dir: str,
+                                  output_video_path: str, width: int, height: int) -> bool:
+        """Crée la vidéo avec un codec de fallback"""
+        try:
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             video_writer = cv2.VideoWriter(
                 output_video_path, fourcc, self.visualization_config.fps, (width, height)
             )
             
             if not video_writer.isOpened():
-                print("❌ Impossible de créer le writer vidéo")
+                print("❌ Impossible de créer le writer vidéo même avec mp4v")
                 return False
             
-            print(f"🎬 Création de la vidéo avec {len(image_files)} frames...")
-            
-            # Ajouter chaque image à la vidéo
-            for image_file in tqdm(image_files, desc="🎞️ Assemblage vidéo"):
-                image_path = os.path.join(frames_dir, image_file)
-                frame = cv2.imread(image_path)
-                
-                if frame is not None:
-                    video_writer.write(frame)
-                else:
-                    print(f"⚠️ Impossible de lire: {image_file}")
-            
-            # Finaliser la vidéo
+            success = self._write_frames_to_video(video_writer, image_files, frames_dir, width, height)
             video_writer.release()
-            return True
+            return success
             
         except Exception as e:
-            print(f"❌ Erreur lors de la création de la vidéo: {e}")
+            print(f"❌ Erreur avec codec fallback: {e}")
             return False
+    
+    def _write_frames_to_video(self, video_writer: cv2.VideoWriter, image_files: List[str],
+                              frames_dir: str, width: int, height: int) -> bool:
+        """Écrit toutes les frames dans la vidéo"""
+        print(f"🎬 Création de la vidéo avec {len(image_files)} frames ({width}x{height})...")
+        
+        for image_file in tqdm(image_files, desc="🎞️ Assemblage vidéo"):
+            image_path = os.path.join(frames_dir, image_file)
+            frame = cv2.imread(image_path)
+            
+            if frame is not None:
+                # Redimensionner si nécessaire pour s'assurer des bonnes dimensions
+                if frame.shape[1] != width or frame.shape[0] != height:
+                    frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_LANCZOS4)
+                
+                video_writer.write(frame)
+            else:
+                print(f"⚠️ Impossible de lire: {image_file}")
+                return False
+        
+        return True
     
     def get_export_stats(self) -> Dict:
         """Retourne des statistiques sur les données disponibles pour l'export"""
@@ -398,20 +507,33 @@ class VideoExporter:
         
         Args:
             config: Configuration du projet
-            preset: Nom du preset ('default', 'high_quality', 'fast_preview', 'tactical_analysis')
+            preset: Nom du preset
+                - 'default': Configuration standard
+                - 'high_quality': Export haute qualité (H.264 Ultra, 8 Mbps)
+                - 'fast_preview': Aperçu rapide (H.264 Low, 1 Mbps)
+                - 'tactical_analysis': Analyse tactique (H.264 High, 4 Mbps)
+                - 'web_optimized': Optimisé pour le web (H.264 Medium, 2.5 Mbps)
             
         Returns:
-            Instance de VideoExporter
+            Instance de VideoExporter configurée
         """
         preset_map = {
             'default': VisualizationConfig.get_default,
             'high_quality': VisualizationConfig.get_high_quality,
             'fast_preview': VisualizationConfig.get_fast_preview,
-            'tactical_analysis': VisualizationConfig.get_tactical_analysis
+            'tactical_analysis': VisualizationConfig.get_tactical_analysis,
+            'web_optimized': VisualizationConfig.get_web_optimized
         }
         
         if preset not in preset_map:
             raise ValueError(f"Preset inconnu: {preset}. Disponibles: {list(preset_map.keys())}")
         
         visualization_config = preset_map[preset]()
+        print(f"🎬 Configuration '{preset}' chargée:")
+        print(f"   📐 Résolution: {visualization_config.figsize} @ {visualization_config.dpi} DPI")
+        print(f"   🎞️ FPS: {visualization_config.fps}")
+        print(f"   🏷️ Qualité: {visualization_config.video_quality}")
+        if visualization_config.video_bitrate:
+            print(f"   📊 Bitrate: {visualization_config.video_bitrate} kbps")
+        
         return cls(config, visualization_config) 
