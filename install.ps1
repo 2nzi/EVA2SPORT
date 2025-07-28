@@ -73,7 +73,7 @@ if ($useGPU) {
 
 # INSTALLATION SAM2 - COMMENTE POUR TEST
 Write-Info "Installation SAM2 depuis GitHub..."
-uv pip install "git+https://github.com/facebookresearch/sam2.git" --force-reinstall
+uv pip install "sam-2 @ git+https://github.com/facebookresearch/sam2.git" --force-reinstall
 
 # CONFIGURATION JUPYTER - COMMENTE POUR TEST
 Write-Info "Configuration kernel Jupyter..."

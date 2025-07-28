@@ -27,10 +27,10 @@ dependencies = [
     "torch>=2.5.1",          # ✅ Remettre
     "torchvision>=0.20.1",   # ✅ Remettre
     "torchaudio>=2.5.1",     # ✅ Remettre
-    # "torch @ https://download.pytorch.org/whl/cu121/torch-2.5.1%2Bcu121-cp310-cp310-win_amd64.whl",
-    # "torchvision @ https://download.pytorch.org/whl/cu121/torchvision-0.20.1%2Bcu121-cp310-cp310-win_amd64.whl",
-    # "torchaudio @ https://download.pytorch.org/whl/cu121/torchaudio-2.5.1%2Bcu121-cp310-cp310-win_amd64.whl",
 
+    "torch @ https://download.pytorch.org/whl/cu121/torch-2.5.1%2Bcu121-cp310-cp310-win_amd64.whl",
+    "torchvision @ https://download.pytorch.org/whl/cu121/torchvision-0.20.1%2Bcu121-cp310-cp310-win_amd64.whl",
+    "torchaudio @ https://download.pytorch.org/whl/cu121/torchaudio-2.5.1%2Bcu121-cp310-cp310-win_amd64.whl",
 
 
     # Computer Vision
@@ -95,7 +95,7 @@ dev = [
 ]
 
 sam2 = [
-    "sam2 @ git+https://github.com/facebookresearch/sam2.git"
+    "sam-2 @ git+https://github.com/facebookresearch/sam2.git"
 ]
 
 # SAM2 installé séparément depuis GitHub dans install.ps1

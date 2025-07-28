@@ -54,7 +54,7 @@ fi
 
 # === SAM2 ===
 info "Installation de SAM2..."
-uv pip install "git+https://github.com/facebookresearch/sam2.git" --force-reinstall
+uv pip install "sam-2 @ git+https://github.com/facebookresearch/sam2.git" --force-reinstall
 
 # === CHECKPOINT ===
 info "Téléchargement du modèle SAM2..."
