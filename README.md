@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/49f97043-2ef4-4dae-baa9-35fb35d7be2f
 
 ## Tutoriels
 
-**🎬 [Tutoriel vidéo complet](docs/TUTO.mp4)** | **📖 [Guide détaillé](docs/README.md)**
+**🎬 [Tutoriel vidéo complet](docs/README.md)**
 
 
 <br>
