@@ -8,11 +8,15 @@
 
 ## 🎬 Résultat en action
 
-Découvrez EVA2SPORT en action avec cette démonstration de segmentation en temps réel :
+[![EVA2SPORT Demo](https://img.youtube.com/vi/9Lq9TDiNjPQ/maxresdefault.jpg)](https://youtu.be/9Lq9TDiNjPQ)
 
-📥 **[Télécharger la vidéo de démonstration](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
+https://github.com/2nzi/EVA2SPORT/blob/main/docs/VIDEO_EXEMPLE_GITHUB.mp4    
 
-Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive.
+https://youtu.be/9Lq9TDiNjPQ
+
+**🎥 [Regarder sur YouTube](https://youtu.be/9Lq9TDiNjPQ)** | **📥 [Télécharger la vidéo](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
+
+*Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive*
 
 ---
 
