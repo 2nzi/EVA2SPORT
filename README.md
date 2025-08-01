@@ -8,11 +8,7 @@
 
 ## 🎬 Résultat en action
 
-<video width="100%" controls>
-  <source src="https://raw.githubusercontent.com/2nzi/EVA2SPORT/main/docs/VIDEO_EXEMPLE_GITHUB.mp4" type="video/mp4">
-  Votre navigateur ne supporte pas la lecture vidéo.
-</video>
-
+https://github.com/user-attachments/assets/49f97043-2ef4-4dae-baa9-35fb35d7be2f
 
 *Pipeline de segmentation vidéo avec SAM2 pour l'analyse sportive*
 
@@ -21,6 +17,8 @@
 
 <br>
 <br>
+
+TUTO VIDEO: https://github.com/user-attachments/assets/6336aa21-64ce-4331-965e-2dfff3b0b5c2
 
 
 ## 🚀 Installation préalable
