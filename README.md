@@ -36,7 +36,6 @@ Retrouver un **[tutoriel vidéo complet](docs/README.md)** complet : isntallatio
 | 💪 **GPU puissant disponible** <br/> *(RTX 3070+, RTX 4060+ idéalement)* | 💻 **Pipeline locale** | Performance maximale, contrôle total, pas de limite de temps |
 
 <br>
-<br>
 
 
 ### 🚀 **Installation selon votre choix**
@@ -50,9 +49,9 @@ Retrouver un **[tutoriel vidéo complet](docs/README.md)** complet : isntallatio
 
 <br>
 
-#### 💻 **Mode Pipeline locale**
+### 💻 **Mode Pipeline locale**
 
-## 🚀 Installation préalable
+#### 🚀 Installation préalable
 
 ### 📋 Étape 1 : Installer Git (si nécessaire)
 
@@ -183,6 +182,7 @@ python tests/test_full_pipeline.py
 | Problème | Solution |
 |----------|----------|
 | `git command not found` | ✅ Installez Git : https://git-scm.com/download/win |
+| `install.ps1 n'est pas possible car pas activé l'exécution de scripts` | ✅ **Ouvrir PowerShell en tant qu'administrateur** puis :<br>`Set-ExecutionPolicy Unrestricted` et répondre **O** |
 | `uv not found` | ✅ Relancez `.\install.ps1` |
 | `CUDA not available` | 🌐 Utilisez Google Colab |
 | `Out of memory` | 🔄 Augmentez la FRAME_INTERVAL ou utilisez Colab |
@@ -224,23 +224,8 @@ watch -n 1 nvidia-smi
 ## 🎥 Ressources et tutoriels
 
 ### 📹 **Vidéos de démonstration**
-- 🎬 **[Tutoriel complet d'utilisation](docs/DEMO_TRACKING.mp4)**
+- 🎬 **[Tutoriel complet d'utilisation](docs/)**
 - 📊 **[Résultat final en action](docs/VIDEO_EXEMPLE_GITHUB.mp4)**
 
 
----
-
-### 📋 **Prérequis système**
-
-**Minimum (mode Colab) :**
-- Connexion internet stable
-- Navigateur moderne
-
-**Recommandé (mode local) :**
-- Windows 10/11 avec PowerShell
-- GPU NVIDIA avec 6GB+ VRAM (RTX 3070+, RTX 4060+)
-- ~5GB d'espace disque libre
-- 16GB+ RAM recommandés
-
----
 
