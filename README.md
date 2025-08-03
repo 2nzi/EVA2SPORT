@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/49f97043-2ef4-4dae-baa9-35fb35d7be2f
 
 ## 🎬 Tutoriels
 
-**[Tutoriel vidéo complet](docs/README.md)**
+Retrouver un **[tutoriel vidéo complet](docs/README.md)** complet : isntallation et utilisation colab et locale.
 
 
 <br>
@@ -79,7 +79,6 @@ cd EVA2SPORT
 ```
 
 ---
-<br>
 
 ### 📋 Étape 3 : Lancer l'installation de l'environnement
 
@@ -105,7 +104,6 @@ Ouvrir le projet dans votre IDE et ouvrir un terminal à l'interieur
 ---
 
 <br>
-<br>
 
 
 ## 📊 Workflow Complet - 3 Étapes
@@ -125,6 +123,8 @@ Ouvrir le projet dans votre IDE et ouvrir un terminal à l'interieur
 ├── 📊 ma_video_calib.json          # Configuration caméra
 └── 🎯 ma_video_objects.json        # Annotations objets
 ```
+<br>
+
 
 ### 🚀 **Étape 2 : Choisissez votre mode de traitement**
 
@@ -140,6 +140,9 @@ Ouvrir le projet dans votre IDE et ouvrir un terminal à l'interieur
 
 **🚀 Démarrage :** [SAM_EVA2PERF_COLAB.ipynb](notebook/SAM_EVA2PERF_COLAB.ipynb)
 
+<br>
+
+
 #### 💻 **Mode B : Pipeline locale (recommandé si GPU puissant)**
 
 **Plusieurs scripts selon vos besoins :**
@@ -152,6 +155,8 @@ python examples/event_processing.py
 python tests/test_full_pipeline.py
 
 ```
+<br>
+
 
 ### 📊 **Étape 3 : Récupérez vos résultats**
 
@@ -163,7 +168,6 @@ python tests/test_full_pipeline.py
 └── 🎥 ma_video_annotated.mp4           # Vidéo finale annotée
 ```
 
----
 
 <br>
 <br>
