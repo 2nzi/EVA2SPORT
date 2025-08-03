@@ -35,6 +35,10 @@ https://github.com/user-attachments/assets/49f97043-2ef4-4dae-baa9-35fb35d7be2f
 | 🖥️ **Pas de GPU puissant** <br/> *(GPU intégré, ancien GPU, ou CPU uniquement)* | 🌐 **Google Colab** | GPU A100, installation automatique, simplicité |
 | 💪 **GPU puissant disponible** <br/> *(RTX 3070+, RTX 4060+ idéalement)* | 💻 **Pipeline locale** | Performance maximale, contrôle total, pas de limite de temps |
 
+<br>
+<br>
+
+
 ### 🚀 **Installation selon votre choix**
 
 #### 🌐 **Mode Google Colab (GPU faible/absent)**
@@ -47,9 +51,6 @@ https://github.com/user-attachments/assets/49f97043-2ef4-4dae-baa9-35fb35d7be2f
 <br>
 
 #### 💻 **Mode Pipeline locale**
-
-
-<br>
 
 ## 🚀 Installation préalable
 
@@ -80,7 +81,9 @@ cd EVA2SPORT
 ---
 <br>
 
-#ouvrir le projet dans votre IDE et ouvrir un terminal à l'interieur
+### 📋 Étape 3 : Lancer l'installation de l'environnement
+
+Ouvrir le projet dans votre IDE et ouvrir un terminal à l'interieur
 
 ```powershell
 # Installation automatique complète et activation de l'env
@@ -148,8 +151,6 @@ python examples/event_processing.py
 # Mode pipeline complète
 python tests/test_full_pipeline.py
 
-# Mode multi-événements 
-python tests/test_multi_event_manager.py
 ```
 
 ### 📊 **Étape 3 : Récupérez vos résultats**
@@ -167,6 +168,8 @@ python tests/test_multi_event_manager.py
 <br>
 <br>
 <br>
+
+---
 
 
 ## 🔧 Aide et Troubleshooting
