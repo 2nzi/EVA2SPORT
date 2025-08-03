@@ -19,9 +19,34 @@ https://github.com/user-attachments/assets/49f97043-2ef4-4dae-baa9-35fb35d7be2f
 
 
 
-## Tutoriels
+## 🎬 Tutoriels
 
-**🎬 [Tutoriel vidéo complet](docs/README.md)**
+**[Tutoriel vidéo complet](docs/README.md)**
+
+
+<br>
+
+## 🎯 Recommandations d'utilisation
+
+### 🤔 **Quel mode choisir ?**
+
+| Votre situation | Mode recommandé | Avantages |
+|-----------------|-----------------|-----------|
+| 🖥️ **Pas de GPU puissant** <br/> *(GPU intégré, ancien GPU, ou CPU uniquement)* | 🌐 **Google Colab** | GPU A100, installation automatique, simplicité |
+| 💪 **GPU puissant disponible** <br/> *(RTX 3070+, RTX 4060+ idéalement)* | 💻 **Pipeline locale** | Performance maximale, contrôle total, pas de limite de temps |
+
+### 🚀 **Installation selon votre choix**
+
+#### 🌐 **Mode Google Colab (GPU faible/absent)**
+
+**Aucune installation nécessaire !** 
+- Utilisez directement : **[SAM_EVA2PERF_COLAB.ipynb](notebook/SAM_EVA2PERF_COLAB.ipynb)**
+- GPU (à louer) fourni par Google : 100 crédit = 10€ | L4 ~ 2 credit/h | A100 ~ 7 credit/h
+- Installation automatique de toutes les dépendances
+
+<br>
+
+#### 💻 **Mode Pipeline locale**
 
 
 <br>
@@ -54,34 +79,15 @@ cd EVA2SPORT
 
 ---
 <br>
-<br>
 
-## 🎯 Recommandations d'utilisation
-
-### 🤔 **Quel mode choisir ?**
-
-| Votre situation | Mode recommandé | Avantages |
-|-----------------|-----------------|-----------|
-| 🖥️ **Pas de GPU puissant** <br/> *(GPU intégré, ancien GPU, ou CPU uniquement)* | 🌐 **Google Colab** | GPU A100, installation automatique, simplicité |
-| 💪 **GPU puissant disponible** <br/> *(RTX 3070+, RTX 4060+ idéalement)* | 💻 **Pipeline locale** | Performance maximale, contrôle total, pas de limite de temps |
-
-### 🚀 **Installation selon votre choix**
-
-#### 🌐 **Mode Google Colab (GPU faible/absent)**
-
-**Aucune installation nécessaire !** 
-- Utilisez directement : **[SAM_EVA2PERF_COLAB.ipynb](notebook/SAM_EVA2PERF_COLAB.ipynb)**
-- GPU (à louer) fourni par Google : 100 crédit = 10€ | L4 ~ 2 credit/h | A100 ~ 7 credit/h
-- Installation automatique de toutes les dépendances
-
-#### 💻 **Mode Pipeline locale (GPU puissant)**
+#ouvrir le projet dans votre IDE et ouvrir un terminal à l'interieur
 
 ```powershell
-# Installation automatique complète
+# Installation automatique complète et activation de l'env
 .\install.ps1
 
 # Vérification de votre GPU
-uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
+# uv run python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
 ```
 
 **L'installation se charge automatiquement de :**
